@@ -7,4 +7,5 @@
     - ~/.vimrc
 - tmux 
     - ~/.tmux.conf
-- .zshrc
+- zsh
+    - .zshrc
