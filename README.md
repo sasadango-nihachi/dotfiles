@@ -9,3 +9,5 @@
     - ~/.tmux.conf
 - zsh
     - .zshrc
+- wezterm
+    - .wezterm.lua
