@@ -11,3 +11,9 @@
     - .zshrc
 - wezterm
     - .wezterm.lua
+
+## シンボリックリンク
+```
+# .vimrc
+ln -sf ~/dotfiles/.vimrc ~/.vimrc
+```
