@@ -11,7 +11,12 @@
     - .zshrc
 - wezterm
     - .wezterm.lua
-
+- bash
+    - .bash_profile
+    - .bashrc 
+- git 
+    - .gitconfig
+    - .gitignore_global
 ## シンボリックリンク
 ```
 # .vimrc
