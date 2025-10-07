@@ -17,6 +17,8 @@
 - git 
     - .gitconfig
     - .gitignore_global
+- Brewfile
+    - brewのリストdumpしておこうかな
 ## シンボリックリンク
 ```
 # .vimrc
