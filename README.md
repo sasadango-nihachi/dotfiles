@@ -1,6 +1,6 @@
 # dotfiles
 - configファイルを管理するリポジトリ
-
+- $HOME直下にこのリポジトリを配置する
 
 ## 対応ファイル
 - vim
@@ -9,6 +9,7 @@
     - ~/.tmux.conf
 - zsh
     - .zshrc
+    - .zprofile (Key情報はこっちにある ※githubには入れない)
 - wezterm
     - .wezterm.lua
 - bash
@@ -19,8 +20,14 @@
     - .gitignore_global
 - Brewfile
     - brewのリストdumpしておこうかな
+
 ## シンボリックリンク
 ```
 # .vimrc
-ln -sf ~/dotfiles/.vimrc ~/.vimrc
+ln -sf $HOME/dotfiles/.vimrc ~/.vimrc
+```
+
+## インストール方法
+```
+./install.sh
 ```
