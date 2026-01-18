@@ -41,7 +41,6 @@ FILES=(
 CONFIG_DIRS=(
     # "nvim"
     # "starship.toml"
-    # "wezterm"
 )
 # ↑ ~/.config 以下に配置する設定ファイル/ディレクトリ
 #   コメントアウト(#)を外すと有効になる
