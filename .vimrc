@@ -1,4 +1,4 @@
-language messages en_US.UTF-8    " language set US
+language message en_US.UTF-8    " language set US
 
 syntax on                        " Enable syntax highlighting.
 filetype plugin indent on        " Enable file type based indentation.
@@ -117,6 +117,9 @@ tnoremap <C-l> <C-\><C-n><C-w>l
 "command! GS botright Git | resize 15
 " 上に高さ15行でGitステータスを開く
 command! GS Git | resize 15
+
+" :T で下部に高さ10行でターミナル
+command! -nargs=* T 10split | terminal <args>
 
 " Install vim-plug if it's not already installed (Unix-only).
 if empty(glob('~/.vim/autoload/plug.vim'))
