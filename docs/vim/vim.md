@@ -484,3 +484,4 @@ git config --global user.email "your-github-username@users.noreply.github.com"
 set splitright  " vsで右側に開く
 set splitbelow  " spで下側に開く
 ```
+
