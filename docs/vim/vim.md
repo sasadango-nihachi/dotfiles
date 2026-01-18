@@ -485,3 +485,4 @@ set splitright  " vsで右側に開く
 set splitbelow  " spで下側に開く
 ```
 
+
