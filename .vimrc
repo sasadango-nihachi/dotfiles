@@ -113,7 +113,10 @@ tnoremap <C-k> <C-\><C-n><C-w>k
 tnoremap <C-l> <C-\><C-n><C-w>l
 
 
-
+" 下部に高さ15行でGitステータスを開く
+"command! GS botright Git | resize 15
+" 上に高さ15行でGitステータスを開く
+command! GS Git | resize 15
 
 " Install vim-plug if it's not already installed (Unix-only).
 if empty(glob('~/.vim/autoload/plug.vim'))
