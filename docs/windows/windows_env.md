@@ -37,3 +37,48 @@ choco list                   # インストール済み一覧
 choco serch <キーワード>     # パッケージ検索
 ```
 
+## ローカルエリアでネットワーク接続（WiFiの場合）
+
+- 情報取得
+    - Ipv4アドレス（ローカル）
+    - サブネットマスク
+    - デフォルトゲートウェイ
+    - DNSサーバー
+
+- コマンド
+```
+ipconfig /all
+```
+
+- 設定手順
+    1.「設定」
+    2.「ネットワークとインターネット」
+    3.「Wi-Fi」をクリック
+    4. 接続中のネットワーク名をクリック
+    5.「IP割り当て」の「編集」をクリック
+
+## OpenSSH導入
+
+```
+# chocoで--paramsをいれないとクライアントしか入らない
+choco install openssh --params="/SSHServerFeature"
+
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic
+
+Get-Service sshd
+```
+
+## WSLメモリ制限変更
+- 下記作成
+```
+vim C:\Users\myuser\.wslconfig
+```
+
+- 内容
+```
+[wsl2]
+memory=24GB
+```
+
+
