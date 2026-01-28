@@ -4,7 +4,7 @@ local act = wezterm.action
 
 -- フォント設定を追加
 config.font = wezterm.font('HackGen Console NF')
-config.font_size = 18
+config.font_size = 15
 
 -- 基本設定
 -- config.font_size = 14
