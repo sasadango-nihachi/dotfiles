@@ -69,7 +69,7 @@ Set-Service -Name sshd -StartupType Automatic
 Get-Service sshd
 ```
 
-## WSLメモリ制限変更
+## WSLメモリ制限変更かつIdleTimeoutオフ
 - 下記作成
 ```
 vim C:\Users\myuser\.wslconfig
@@ -79,6 +79,7 @@ vim C:\Users\myuser\.wslconfig
 ```
 [wsl2]
 memory=24GB
+vmIdleTimeout=-1
 ```
 
 
