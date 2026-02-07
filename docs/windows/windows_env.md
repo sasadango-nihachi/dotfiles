@@ -80,6 +80,33 @@ vim C:\Users\myuser\.wslconfig
 [wsl2]
 memory=24GB
 vmIdleTimeout=-1
+networkingMode=mirrored
 ```
 
 
+## デフォルトのシェルをpowershellに変更
+```
+New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+```
+
+## Portを開けておこう
+```
+New-NetFirewallRule -DisplayName "Dev Ports" -Direction Inbound -LocalPort 3000-9000 -Protocol TCP -Action Allow
+
+#確認
+Get-NetFirewallRule -DisplayName "Dev Ports" | Get-NetFirewallPortFilter
+```
+
+## WSL内のssh設定
+```
+sudo apt install openssh-server
+sudo sed -i 's/#Port 22/Port 4022/' /etc/ssh/sshd_config
+sudo systemctl enable ssh
+sudo systemctl start ssh
+```
+
+## sshのアクセス方法
+```
+# WSL に直接入る
+ssh ユーザー名@WindowsのIP -p port_no
+```
