@@ -1,2 +1,7 @@
 [core]
         excludesfile = ~/.gitignore_global
+[user]
+	name = sasadango-nihachi
+	email = sasadango.nihachi@gmail.com
+[submodule]
+	recurse = true
