@@ -11,6 +11,7 @@ alias cdc="cd $HOME/Documents/code"
 alias cdt="cd $HOME/Desktop"
 alias cdd="cd $HOME/Documents"
 alias icat="wezterm imgcat" # wezterm上で画像を開く
+alias tank='cd $HOME/Documents/code/tank && git pull && git submodule update --remote && claude'
 
 # rye
 source "$HOME/.rye/env"
