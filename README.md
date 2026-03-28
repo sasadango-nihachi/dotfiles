@@ -21,6 +21,14 @@
 - Brewfile
     - brewのリストdumpしておこうかな
 
+## TODO
+
+- [ ] VSCode設定の管理を追加する
+  - `settings.json` をシンボリックリンクでdotfiles管理にする
+  - `extensions.txt`（`code --list-extensions` の出力）を管理する
+  - `keybindings.json` も必要に応じて追加
+  - install.shへの組み込み方針を決める
+
 ## シンボリックリンク
 ```
 # .vimrc
