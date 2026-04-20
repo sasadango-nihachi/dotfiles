@@ -7,7 +7,7 @@
 # 手動でリンクを張り直したい場合に参照してください。
 #===========================================
 
-# Generated: 2026-01-18 20:44:02
+# Generated: 2026-02-27 10:27:22
 
 # --- HOME directory files ---
 ln -sf "$HOME/dotfiles/.vimrc" "$HOME/.vimrc"
