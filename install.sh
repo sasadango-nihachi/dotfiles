@@ -33,6 +33,7 @@ FILES=(
     ".gitconfig"
     ".gitignore_global"
     ".tmux.conf"
+    ".hyper.js"
 )
 # ↑ 配列の定義
 #   ホームディレクトリ直下に配置するdotfilesのリスト
