@@ -7,7 +7,7 @@
 # 手動でリンクを張り直したい場合に参照してください。
 #===========================================
 
-# Generated: 2026-04-25 00:04:39
+# Generated: 2026-05-31 02:34:39
 
 # --- HOME directory files ---
 ln -sf "$HOME/dotfiles/.vimrc" "$HOME/.vimrc"
@@ -18,3 +18,6 @@ ln -sf "$HOME/dotfiles/.gitignore_global" "$HOME/.gitignore_global"
 ln -sf "$HOME/dotfiles/.tmux.conf" "$HOME/.tmux.conf"
 ln -sf "$HOME/dotfiles/.hyper.js" "$HOME/.hyper.js"
 
+# --- .config directory files ---
+mkdir -p "$HOME/.config"
+ln -sf "$HOME/dotfiles/.config/nvim" "$HOME/.config/nvim"

@@ -1,0 +1,2 @@
+# LazyVim / lazy.nvim が生成する一時ファイル
+# lazy-lock.json はバージョン固定のため Git 管理する（除外しない）

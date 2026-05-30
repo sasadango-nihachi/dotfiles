@@ -5,6 +5,8 @@
 ## 対応ファイル
 - vim
     - ~/.vimrc
+- neovim
+    - ~/.config/nvim/ （LazyVimベース、catppuccin-mocha）
 - tmux 
     - ~/.tmux.conf
 - zsh

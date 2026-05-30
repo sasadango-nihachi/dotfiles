@@ -40,7 +40,7 @@ FILES=(
 #   追加したいファイルがあれば "ファイル名" の形式で追加
 
 CONFIG_DIRS=(
-    # "nvim"
+    "nvim"
     # "starship.toml"
 )
 # ↑ ~/.config 以下に配置する設定ファイル/ディレクトリ
