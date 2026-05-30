@@ -45,7 +45,7 @@ require("lazy").setup({
                 "gzip",
                 "tarPlugin",
                 "tohtml",
-                "tutor",
+                -- "tutor",  -- :Tutor を使うので有効化
                 "zipPlugin",
             },
         },
