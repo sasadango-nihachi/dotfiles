@@ -7,6 +7,7 @@
     - ~/.vimrc
 - neovim
     - ~/.config/nvim/ （LazyVimベース、catppuccin-mocha）
+    - ~/.config/nvim-bare/ （素のNeovim実験用、`NVIM_APPNAME=nvim-bare nvim` / alias `nvb` で起動）
 - tmux 
     - ~/.tmux.conf
 - zsh

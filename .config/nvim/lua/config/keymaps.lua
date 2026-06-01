@@ -34,3 +34,24 @@ map("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "ターミナルから右へ" }
 vim.api.nvim_create_user_command("GS", function()
     vim.cmd("Git | resize 15")
 end, { desc = "Git status を高さ15行で開く" })
+
+-- === 日本語版 Tutor ===
+-- `:Tutor` はシェルロケール（v:lang）を見て言語を決めるため、英語ロケールでは英語版が開く。
+-- ロケール非依存に日本語版を開くため、tutor.vim 内部処理を直接呼ぶラッパーを定義。
+-- 使い方: :TutorJa  (1章を開く)  /  :TutorJa 2  (2章を開く)
+vim.api.nvim_create_user_command("TutorJa", function(opts)
+    local chapter = opts.args ~= "" and opts.args or "01"
+    -- "1" → "01" のように2桁にゼロ埋め
+    if #chapter == 1 then
+        chapter = "0" .. chapter
+    end
+    local file = vim.env.VIMRUNTIME .. "/tutor/ja/vim-" .. chapter .. "-beginner.tutor"
+    if vim.fn.filereadable(file) == 0 then
+        vim.notify("Tutor file not found: " .. file, vim.log.levels.ERROR)
+        return
+    end
+    vim.fn["tutor#SetupVim"]()
+    vim.cmd("drop " .. vim.fn.fnameescape(file))
+    vim.fn["tutor#EnableInteractive"](true)
+    vim.fn["tutor#ApplyTransform"]()
+end, { nargs = "?", desc = "日本語版 Tutor を開く（引数で章番号、例: :TutorJa 2）" })

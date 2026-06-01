@@ -31,3 +31,5 @@ export PATH="/Users/teppeikomata/.rd/bin:$PATH"
 
 # brew rustup shims (added 2026-05-08)
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+
+alias nvb='NVIM_APPNAME=nvim-bare nvim'

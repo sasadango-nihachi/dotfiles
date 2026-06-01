@@ -41,6 +41,7 @@ FILES=(
 
 CONFIG_DIRS=(
     "nvim"
+    "nvim-bare"
     # "starship.toml"
 )
 # ↑ ~/.config 以下に配置する設定ファイル/ディレクトリ
