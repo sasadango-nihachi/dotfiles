@@ -43,3 +43,21 @@ vim.opt.undofile = true
 for _, key in ipairs({ "<Up>", "<Down>", "<Left>", "<Right>" }) do
   vim.keymap.set({ "n", "i", "v" }, key, "<Nop>")
 end
+
+-- :TutorJa  日本語版チュートリアルを開く（ロケール非依存）
+-- 使い方: :TutorJa  (1章)  /  :TutorJa 2  (2章)
+vim.api.nvim_create_user_command("TutorJa", function(opts)
+  local chapter = opts.args ~= "" and opts.args or "01"
+  if #chapter == 1 then
+    chapter = "0" .. chapter
+  end
+  local file = vim.env.VIMRUNTIME .. "/tutor/ja/vim-" .. chapter .. "-beginner.tutor"
+  if vim.fn.filereadable(file) == 0 then
+    vim.notify("Tutor file not found: " .. file, vim.log.levels.ERROR)
+    return
+  end
+  vim.fn["tutor#SetupVim"]()
+  vim.cmd("drop " .. vim.fn.fnameescape(file))
+  vim.fn["tutor#EnableInteractive"](true)
+  vim.fn["tutor#ApplyTransform"]()
+end, { nargs = "?", desc = "日本語版 Tutor を開く（引数で章番号、例: :TutorJa 2）" })
