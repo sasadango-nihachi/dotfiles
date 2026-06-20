@@ -19,7 +19,7 @@ config.font_size = 15
 config.color_scheme = 'Homebrew'
 -- config.color_scheme = 'Kanagawa (Gogh)'
 -- config.color_scheme = 'Kanagawa Dragon (Gogh)'
-config.window_background_opacity = 0.65
+config.window_background_opacity = 0.85
 config.macos_window_background_blur = 10
 
 -- ===========================================
