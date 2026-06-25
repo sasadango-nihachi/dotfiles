@@ -1,7 +1,8 @@
 [core]
         excludesfile = ~/.gitignore_global
-[user]
-	name = sasadango-nihachi
-	email = sasadango.nihachi@gmail.com
 [submodule]
 	recurse = true
+# user.name / user.email は PC ごとに異なるため dotfiles では管理せず、
+# 各マシンの ~/.gitconfig.local に記載する（このファイルは dotfiles 管理外）
+[include]
+	path = ~/.gitconfig.local
