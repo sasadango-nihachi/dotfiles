@@ -42,10 +42,20 @@ FILES=(
 CONFIG_DIRS=(
     "nvim"
     "nvim-bare"
+    "jrnl"
     # "starship.toml"
 )
 # ↑ ~/.config 以下に配置する設定ファイル/ディレクトリ
 #   コメントアウト(#)を外すと有効になる
+
+NESTED_FILES=(
+    ".emacs.d/init.el"
+)
+# ↑ ホーム直下のサブディレクトリ内にある「個別ファイル」のリスト
+#   ディレクトリ丸ごとリンクすると困る場合に使う
+#   例: ~/.emacs.d/ には elpa/(インストール済みパッケージ) や
+#       auto-save-list/ が同居するため、init.el だけをリンクしたい
+#   リポジトリ内のパスをそのまま書く（= ホームでのパスと一致する）
 
 #-------------------------------------------
 # 色付き出力用の関数
@@ -187,6 +197,19 @@ EOF
         done
     fi
 
+    echo "" >> "$output_file"
+
+    # サブディレクトリ内の個別ファイル
+    if [[ ${#NESTED_FILES[@]} -gt 0 ]]; then
+        echo "# --- nested files (individual files in subdirectories) ---" >> "$output_file"
+        for item in "${NESTED_FILES[@]}"; do
+            if [[ -e "$DOTFILES_DIR/$item" ]]; then
+                echo 'mkdir -p "$HOME/'"$(dirname "$item")"'"' >> "$output_file"
+                echo 'ln -sf "$HOME/dotfiles/'"$item"'" "$HOME/'"$item"'"' >> "$output_file"
+            fi
+        done
+    fi
+
     success "Link commands saved to: $output_file"
 }
 
@@ -247,6 +270,28 @@ main() {
                 # ↑ 例: ~/dotfiles/.config/nvim -> ~/.config/nvim
             else
                 warn "Skipped (not found): $DOTFILES_DIR/.config/$item"
+            fi
+        done
+    fi
+
+    if [[ ${#NESTED_FILES[@]} -gt 0 ]]; then
+    # ↑ NESTED_FILES 配列に1つ以上の要素がある場合
+
+        echo ""
+        info "Installing nested files..."
+
+        for item in "${NESTED_FILES[@]}"; do
+            if [[ -e "$DOTFILES_DIR/$item" ]]; then
+
+                mkdir -p "$HOME/$(dirname "$item")"
+                # ↑ リンク先の親ディレクトリを先に作っておく
+                #   dirname ".emacs.d/init.el" → ".emacs.d"
+                #   これがないと ln が「そんなディレクトリはない」で失敗する
+
+                create_symlink "$DOTFILES_DIR/$item" "$HOME/$item"
+                # ↑ 例: ~/dotfiles/.emacs.d/init.el -> ~/.emacs.d/init.el
+            else
+                warn "Skipped (not found): $DOTFILES_DIR/$item"
             fi
         done
     fi

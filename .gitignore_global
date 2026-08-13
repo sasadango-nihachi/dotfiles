@@ -188,3 +188,5 @@ temp/
 *.old
 *.orig
 *.rej
+
+**/.claude/settings.local.json

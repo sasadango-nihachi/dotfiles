@@ -1,0 +1,25 @@
+# jrnl 設定（dotfiles管理 / symlink → ~/.config/jrnl/jrnl.yaml）
+# ジャーナル本体は Google Drive 配下に置き、日別ファイルで自動同期する（フォルダジャーナル）
+# メールアドレスは環境変数 JRNL_GDRIVE_EMAIL で注入（~/.zprofile で export）
+# 詳細は tank/library/journal/README.md
+version: v4.3
+journals:
+  default:
+    # ディレクトリを指すとフォルダジャーナル（YYYY/MM/DD.txt 日別保存）になる → 同期衝突に強い
+    # フォルダジャーナルは暗号化不可（クラウド上は平文）。中身はGoogleアカウントに準拠
+    journal: "~/Library/CloudStorage/GoogleDrive-${JRNL_GDRIVE_EMAIL}/マイドライブ/journal"
+encrypt: false
+editor: "vim"
+timeformat: "%Y-%m-%d %H:%M"
+linewrap: 79
+default_hour: 9
+default_minute: 0
+indent_character: "|"
+tagsymbols: "@"
+highlight: true
+colors:
+  body: none
+  date: black
+  tags: yellow
+  title: cyan
+template: false
