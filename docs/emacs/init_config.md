@@ -185,9 +185,39 @@ MELPA を追加し、`my/required-packages` の未導入分を起動時に自動
 
 ### 4. テーマ
 
-Emacs 同梱の **`misterioso`**（青緑系の暗い背景、`#2d3743`）。追加パッケージ不要。
+Emacs 同梱の **`misterioso`** をベースに、**背景だけ黒系（`#0D0D0D`）へ上書き**している。追加パッケージ不要。
 
-同梱テーマは他に modus-vivendi / modus-operandi（高可読・アクセシビリティ準拠）、wombat、deeper-blue など全23個。一覧は `M-x customize-themes`。
+背景の上書きは `my/apply-peacock-chrome` の中で行う（`load-theme` への advice 経由で呼ばれるので、テーマ再読込でも維持されるため）。純黒 `#000000` はきついので少しだけ持ち上げてある。
+
+```elisp
+(load-theme 'misterioso t)
+;; 背景は my/apply-peacock-chrome 側で上書き
+(set-face-attribute 'default nil :background "#0D0D0D")
+(set-face-attribute 'region  nil :background "#2d4948")   ; misterioso 由来を維持
+(set-face-attribute 'hl-line nil :background "#1a1a1a" :inherit 'unspecified)
+```
+
+配色の3層構成:
+
+```
+エディタ本体   #0D0D0D   黒系
+treemacs      #1A0A00   activityBar（わずかに暖色寄りなので境界がわかる）
+モードライン   #8B0000   statusBar
+```
+
+misterioso のシンタックスは緑 `#74af68` / シアン `#00ede1` `#34cae2` に加えて**橙 `#ffad29` `#e67128`** を持つため、黒背景なら外枠の琥珀とも繋がる。misterioso 既定の背景 `#2d3743`（青灰）のままだと外枠の暖色から分離して見えるので上書きしている。
+
+#### 検討して見送った案
+
+**自作テーマ** — VSCode から持ってきた JSON は Peacock の設定なので、**エディタ本体の配色が含まれていない**（`activityBar` / `statusBar` / `titleBar` のみ）。同じ4色をシンタックスハイライトに使うと色相が赤〜橙に集中し、キーワード・文字列・コメントの区別がつかなくなる。
+
+**ef-themes（`ef-autumn`）** — 一度導入したが、背景 `#0f0e06` に黄緑寄りの茶が乗ってくすんで見えたため除去した。参考までに、目標 `#1A0A00` との背景色の距離は ef-autumn `#0f0e06`（13.2）> ef-cherie `#190a0f`（15.0）> ef-melissa-dark `#352718`（46.3）>> misterioso 既定 `#2d3743`（82.9）だった。
+
+#### 他のテーマに変えたい場合
+
+同梱テーマは23個ある（`M-x customize-themes` で一覧）。modus-vivendi / modus-operandi は高可読・アクセシビリティ準拠、他に wombat、deeper-blue など。
+
+`load-theme` の行を差し替えるだけでよい。**外枠の配色は advice で維持される**が、`default` の背景上書きも同時に効くので、テーマ本来の背景を使いたい場合は `my/apply-peacock-chrome` から該当行を外すこと。
 
 ### 5. アイコン
 

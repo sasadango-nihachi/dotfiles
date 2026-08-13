@@ -19,7 +19,9 @@
     treemacs-nerd-icons
     diff-hl
     magit
-    treemacs-magit)
+    treemacs-magit
+    eat
+    exec-path-from-shell)
   "この設定が前提とするパッケージ。起動時に未導入なら自動で入れる。")
 
 (defun my/ensure-packages ()
@@ -73,7 +75,10 @@
 ;;; テーマ（エディタ本体の配色）
 ;;; ---------------------------------------------------------------
 
-;; Emacs 同梱の misterioso = 青緑系の暗い背景
+;; Emacs 同梱の misterioso をベースに、背景だけ黒系へ上書きする。
+;; misterioso のシンタックスは緑 #74af68 / シアン #00ede1 #34cae2 に加えて
+;; 橙 #ffad29 #e67128 を持つので、黒背景なら外枠の琥珀とも繋がる。
+;; 背景の上書きは my/apply-peacock-chrome 側で行う（テーマ再読込でも維持されるため）。
 (load-theme 'misterioso t)
 
 ;;; ---------------------------------------------------------------
@@ -145,6 +150,13 @@
 
 (defun my/apply-peacock-chrome ()
   "VSCode Peacock 風の配色を UI の外枠に適用する。"
+  ;; エディタ本体の背景を黒系へ。misterioso 既定の #2d3743（青灰）だと
+  ;; 外枠の暖色と分離して見えるため。純黒(#000000)はきついので少しだけ持ち上げる。
+  (set-face-attribute 'default nil :background "#0D0D0D")
+  ;; 背景を変えたことで浮く箇所を合わせ直す
+  (set-face-attribute 'region nil :background "#2d4948")
+  (set-face-attribute 'hl-line nil :background "#1a1a1a" :inherit 'unspecified)
+
   ;; モードライン = VSCode の statusBar
   (set-face-attribute 'mode-line nil
                       :background "#8B0000" :foreground "#E8A24A"
@@ -225,6 +237,89 @@
 ;; NOTE: 実際の適用はファイル末尾で行う。
 ;;   この関数は diff-hl や treemacs のフェイスも触るため、
 ;;   それらを require する前に呼ぶと (facep ...) のガードに阻まれて空振りする。
+
+;;; ---------------------------------------------------------------
+;;; PATH の取り込み
+;;; ---------------------------------------------------------------
+;; macOS では Dock / Finder から起動したアプリはシェルの PATH を引き継がず、
+;; launchd の最小 PATH になる。そのため homebrew 等に入れたコマンド
+;; （claude, git, python …）が Emacs から見つからない。
+;; ログインシェルに問い合わせて PATH を取り込む。
+;;
+;; 取り込むのは PATH と MANPATH のみ（exec-path-from-shell-variables の既定）。
+;; API キー等の秘匿値は取り込まない。
+
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
+;;; ---------------------------------------------------------------
+;;; ターミナル（VSCode の統合ターミナル相当）
+;;; ---------------------------------------------------------------
+;; eat = 純 elisp の端末エミュレータ（NonGNU ELPA、ビルド不要）。
+;;
+;; NOTE: eshell / M-x shell では claude・vim・top のような全画面 TUI は動かない。
+;;       これらは comint ベースの「行指向」インターフェースで、
+;;       カーソル移動やANSIエスケープを解釈する PTY を持たないため。
+;;       eat はそれを持つので TUI アプリが動く。
+;;
+;; 表示は Emacs 標準の side window。左は treemacs が使っているので下に出す。
+;; side を 'right や 'top に変えれば位置は動かせる。
+
+(require 'eat)
+
+(setq display-buffer-alist
+      (append display-buffer-alist
+              ;; *eat* / *eat*<2> / *tank-eat*（eat-project）/ *eshell* / *shell*
+              '(("\\`\\*\\(?:.*-\\)?eat\\*\\(?:<[0-9]+>\\)?\\'\\|\\`\\*e?shell\\*\\'"
+                 (display-buffer-in-side-window)
+                 (side . bottom)
+                 (slot . 0)
+                 (window-height . 0.3)          ; フレーム高さの30%
+                 (window-parameters
+                  ;; C-x 1（他のウィンドウを全部閉じる）でも消えないようにする
+                  (no-delete-other-windows . t))))))
+
+(defun my/toggle-terminal ()
+  "下部のサイドウィンドウで eat を開閉する。
+VSCode の Ctrl+` と同じ挙動にする:
+  閉じている  -> 開いてフォーカスを移す
+  開いている  -> フォーカスを移す
+  フォーカス中 -> 閉じる"
+  (interactive)
+  (let ((win (get-buffer-window eat-buffer-name)))
+    (cond
+     ((and win (eq win (selected-window))) (delete-window win))
+     (win (select-window win))
+     (t (eat)))))
+
+(global-set-key (kbd "C-c s") #'my/toggle-terminal)
+;; サイドウィンドウ（treemacs 含む）を一括で開閉する標準コマンド
+(global-set-key (kbd "C-c w") #'window-toggle-side-windows)
+
+;;; ---------------------------------------------------------------
+;;; ウィンドウ間の移動
+;;; ---------------------------------------------------------------
+;; windmove / winner はどちらも Emacs 同梱。
+;;
+;; NOTE: windmove の既定は S-<arrow> だが、それだと **シフト+矢印の範囲選択**が
+;;       使えなくなる（S-<arrow> は明示的な割り当てではなく shift-translation で
+;;       選択に使われているため、上書きすると選択側が死ぬ）。
+;;       完全に空いている C-c <arrow> を使う。
+
+;; NOTE: windmove-default-keybindings は修飾キー（shift/meta/control 等）しか
+;;       受け付けず、C-c のようなプレフィックスは渡せない。個別に割り当てる。
+(require 'windmove)
+(global-set-key (kbd "C-c <left>")  #'windmove-left)
+(global-set-key (kbd "C-c <right>") #'windmove-right)
+(global-set-key (kbd "C-c <up>")    #'windmove-up)
+(global-set-key (kbd "C-c <down>")  #'windmove-down)
+
+;; NOTE: winner-mode は既定で C-c <left> / C-c <right> を奪うので先に止める。
+(setq winner-dont-bind-my-keys t)
+(winner-mode 1)
+(global-set-key (kbd "C-c u") #'winner-undo)   ; ウィンドウ配置を元に戻す
+(global-set-key (kbd "C-c U") #'winner-redo)
 
 ;;; ---------------------------------------------------------------
 ;;; Git（magit + diff-hl）
