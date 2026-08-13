@@ -7,7 +7,7 @@
 # 手動でリンクを張り直したい場合に参照してください。
 #===========================================
 
-# Generated: 2026-06-02 02:32:28
+# Generated: 2026-08-14 01:34:09
 
 # --- HOME directory files ---
 ln -sf "$HOME/dotfiles/.vimrc" "$HOME/.vimrc"
@@ -22,3 +22,8 @@ ln -sf "$HOME/dotfiles/.hyper.js" "$HOME/.hyper.js"
 mkdir -p "$HOME/.config"
 ln -sf "$HOME/dotfiles/.config/nvim" "$HOME/.config/nvim"
 ln -sf "$HOME/dotfiles/.config/nvim-bare" "$HOME/.config/nvim-bare"
+ln -sf "$HOME/dotfiles/.config/jrnl" "$HOME/.config/jrnl"
+
+# --- nested files (individual files in subdirectories) ---
+mkdir -p "$HOME/.emacs.d"
+ln -sf "$HOME/dotfiles/.emacs.d/init.el" "$HOME/.emacs.d/init.el"
