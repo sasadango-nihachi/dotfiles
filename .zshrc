@@ -7,7 +7,7 @@ PS1='%n@ [$(date +%H:%M:%S)] :%~ %# '
 
 #alias
 alias ll="ls -latr"
-alias cdc="cd $HOME/Documents/code"
+alias cdc="cd $HOME/code"
 alias cdt="cd $HOME/Desktop"
 alias cdd="cd $HOME/Documents"
 alias icat="wezterm imgcat" # wezterm上で画像を開く
