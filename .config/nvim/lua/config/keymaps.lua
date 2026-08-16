@@ -13,6 +13,22 @@ local map = vim.keymap.set
 -- LazyVim デフォルトで <C-h/j/k/l> はペイン移動に割当済み。
 -- vim-tmux-navigator と統合させたい場合は plugins/tmux.lua を追加する。
 
+-- === ウィンドウサイズ調整 ===
+-- LazyVim 標準は <C-Up>/<C-Down>/<C-Left>/<C-Right> だが、
+-- macOS が既定でこの4つを全部握っているため nvim まで届かない。
+--   Ctrl+←/→ = 操作スペース（デスクトップ）の移動
+--   Ctrl+↑   = Mission Control
+--   Ctrl+↓   = アプリケーションウインドウ（App Exposé）
+-- システム設定 > キーボード > キーボードショートカット > Mission Control で
+-- 解放すれば標準キーも使えるようになるが、デスクトップ切り替えを失う。
+-- ここでは macOS 側を触らずに済むよう <leader>w 配下へ逃がす。
+-- NOTE: 標準の <C-Up> 等の割当は残してあるので、将来 macOS 側を解放すれば両方使える。
+--       Ctrl を使わない素の Vim のキー（10<C-w>> など）や :vert res +10 も衝突しない。
+map("n", "<leader>w>", "<cmd>vertical resize +5<cr>", { desc = "幅を広げる" })
+map("n", "<leader>w<", "<cmd>vertical resize -5<cr>", { desc = "幅を狭める" })
+map("n", "<leader>w+", "<cmd>resize +5<cr>", { desc = "高さを伸ばす" })
+map("n", "<leader>w-", "<cmd>resize -5<cr>", { desc = "高さを縮める" })
+
 -- === ターミナル（既存 .vimrc の :T / :VT / <Leader>t を再現） ===
 vim.api.nvim_create_user_command("T", function(opts)
     vim.cmd("botright 10split | terminal " .. (opts.args or ""))
