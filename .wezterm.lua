@@ -52,10 +52,14 @@ config.keys = {
   { key = 'RightArrow', mods = 'LEADER', action = act.ActivatePaneDirection 'Right' },
 
   -- ペインのサイズ調整
-  { key = 'H', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Left', 5 } },
-  { key = 'J', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Down', 5 } },
-  { key = 'K', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Up', 5 } },
-  { key = 'L', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Right', 5 } },
+  -- 第2引数は移動量（セル数）。1回あたりの変化幅なので、大きくすると少ない回数で動く。
+  -- NOTE: leader (Ctrl+g) は timeout_milliseconds = 3000 の間だけ有効で、
+  --       1回の操作ごとに leader を押し直す必要がある。連打が効かないぶん
+  --       1回の移動量を大きめに取っておく方が実用的。
+  { key = 'H', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Left', 15 } },
+  { key = 'J', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Down', 15 } },
+  { key = 'K', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Up', 15 } },
+  { key = 'L', mods = 'LEADER|SHIFT', action = act.AdjustPaneSize { 'Right', 15 } },
 
   -- その他のtmux風操作
   { key = 'c', mods = 'LEADER', action = act.SpawnTab 'CurrentPaneDomain' },
