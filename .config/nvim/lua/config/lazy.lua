@@ -32,6 +32,8 @@ require("lazy").setup({
         { import = "lazyvim.plugins.extras.lang.rust" },
         { import = "lazyvim.plugins.extras.lang.terraform" },
         { import = "lazyvim.plugins.extras.lang.docker" },
+        -- markdown: render-markdown.nvim（インラインレンダリング）+ marksman(LSP) + markdownlint
+        { import = "lazyvim.plugins.extras.lang.markdown" },
 
         -- 自前プラグイン定義
         { import = "plugins" },
