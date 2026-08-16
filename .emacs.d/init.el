@@ -268,6 +268,15 @@
 
 (require 'eat)
 
+;; 描画のちらつき対策。
+;; eat は「チャンクを受け取ったら少し待ち、その間に次が来たら再描画を先送りする」
+;; 方式でちらつきを抑えている。既定は min 0.008 / max 0.033 秒（約30fps）で、
+;; Claude Code のような全画面を毎回描き直す TUI では中途半端な状態が
+;; 何度も描画されて上下に揺れて見える。待ち時間を延ばしてまとめて描く。
+;;   小さくする -> 反応は速いがちらつく / 大きくする -> 滑らかだが表示が遅れる
+(setq eat-minimum-latency 0.03
+      eat-maximum-latency 0.10)
+
 (setq display-buffer-alist
       (append display-buffer-alist
               ;; *eat* / *eat*<2> / *tank-eat*（eat-project）/ *eshell* / *shell*
@@ -353,23 +362,36 @@ VSCode の Ctrl+` と同じ挙動にする:
 (defvar my/git-change-count (make-hash-table :test 'equal)
   "リポジトリルート -> 変更ファイル数 のキャッシュ。")
 
+(defun my/git-root ()
+  "現在のバッファが属する git リポジトリのルートを返す。
+NOTE: vc-root-dir は使えない。あれは「そのファイル自身が追跡されていること」を
+      前提にしており、新規作成した未追跡ファイルを開くと nil を返す
+      （リポジトリ内にいるのにバッジが消える）。
+      .git を上に辿る方式なら追跡状態に依存せず、
+      *eat* や dired のような非ファイルバッファでも効く。"
+  (when-let* ((dir (locate-dominating-file default-directory ".git")))
+    (expand-file-name dir)))
+
+(defun my/git-count-changes (root)
+  "ROOT の変更ファイル数を数える。--porcelain は1変更につき1行。
+NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
+      `?? path/dir/' の1行に畳んでしまい、中に10ファイルあっても1と数える
+      （VSCode の Source Control バッジはファイル単位なので値がずれる）。"
+  (let ((default-directory root))
+    (with-temp-buffer
+      (if (zerop (call-process "git" nil t nil "status" "--porcelain" "-uall"))
+          (count-lines (point-min) (point-max))
+        0))))
+
 (defun my/git-change-count-update (&rest _)
   "現在のバッファが属するリポジトリの変更ファイル数を数え直す。"
-  (when-let* ((file (buffer-file-name))
-              (root (ignore-errors (vc-root-dir))))
-    (let ((default-directory root))
-      (puthash (expand-file-name root)
-               (with-temp-buffer
-                 ;; --porcelain は1変更につき1行。未追跡ファイルも含む
-                 (if (zerop (call-process "git" nil t nil "status" "--porcelain"))
-                     (count-lines (point-min) (point-max))
-                   0))
-               my/git-change-count))))
+  (when-let* ((root (my/git-root)))
+    (puthash root (my/git-count-changes root) my/git-change-count)))
 
 (defun my/git-change-badge ()
   "モードラインに出すバッジ文字列。変更が無いときは空。"
-  (when-let* ((root (ignore-errors (vc-root-dir)))
-              (n (gethash (expand-file-name root) my/git-change-count)))
+  (when-let* ((root (my/git-root))
+              (n (gethash root my/git-change-count)))
     (when (> n 0)
       (propertize (format " %d " n) 'face 'my/git-badge-face))))
 
@@ -390,16 +412,17 @@ VSCode の Ctrl+` と同じ挙動にする:
   (when (fboundp 'treemacs-current-workspace)
     (dolist (project (ignore-errors (treemacs-workspace->projects (treemacs-current-workspace))))
       (let* ((root (treemacs-project->path project))
-             (n (with-temp-buffer
-                  (let ((default-directory root))
-                    (if (zerop (call-process "git" nil t nil "status" "--porcelain"))
-                        (count-lines (point-min) (point-max))
-                      0)))))
+             (n (if (file-directory-p (expand-file-name ".git" root))
+                    (my/git-count-changes root)
+                  0)))
         (if (> n 0)
             (treemacs-set-annotation-suffix
              root (propertize (format " %d " n) 'face 'my/git-badge-face) "git-count")
           (treemacs-remove-annotation-suffix root "git-count"))
-        (ignore-errors (treemacs-apply-annotations root))))))
+        ;; NOTE: apply-annotations は treemacs バッファが current でないと効かない。
+        ;;       after-save-hook 等はファイルバッファから呼ばれるので明示的に切り替える。
+        (treemacs-run-in-every-buffer
+         (ignore-errors (treemacs-apply-annotations root)))))))
 
 (defun my/git-change-count-update-all (&rest _)
   "モードラインと treemacs のバッジをまとめて更新する。"

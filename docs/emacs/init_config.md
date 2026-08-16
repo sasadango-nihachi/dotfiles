@@ -16,9 +16,15 @@
 |---|---|
 | `C-c t` | treemacs の開閉 |
 | `C-c T` | treemacs へカーソル移動 |
+| `C-c s` | ターミナル（eat）の開閉・フォーカス |
 | `C-c g` | magit のステータス画面 |
+| `C-c w` | サイドウィンドウ（treemacs + ターミナル）を一括開閉 |
+| `C-c ← ↑ → ↓` | 上下左右のウィンドウへ移動 |
+| `C-c u` / `C-c U` | ウィンドウ配置を元に戻す / やり直す |
 
 `C-c t` は「control を押しながら `c` → 離す → `t`」の順に押す（同時押しではない）。`C-c T` の最後は大文字なので `shift + t`。
+
+キー表記の対応（macOS）: `C-` = control / `M-` = option（`ESC` 単独でも代用可）/ `S-` = shift / `s-` = command。`ns-alternate-modifier` が `meta` なので option が Meta として働く。
 
 ### treemacs のツリー内
 
@@ -87,13 +93,22 @@ diff-hl が有効なバッファでのみ生えるキー。
 
 マーカーを目で探さなくても `C-x v ]` で変更箇所に飛べる。`C-x v S` は magit を開かずに部分ステージできる。
 
+### eat（ターミナル）の中
+
+| キー | 動作 |
+|---|---|
+| `C-c C-e` | semi-char モード（既定）と emacs モードの切り替え |
+| `C-c C-k` | char モード。キー入力を全部端末側へ渡す |
+
+TUI アプリ操作中に矢印キーや `C-c` が効かない場合は char モードにする。
+
 ### 標準のウィンドウ操作（参考）
 
 | キー | 動作 |
 |---|---|
 | `C-x 2` / `C-x 3` | 上下 / 左右に分割 |
 | `C-x 0` / `C-x 1` | 今のを閉じる / 他を全部閉じる |
-| `C-x o` | 次のウィンドウへ |
+| `C-x o` | 次のウィンドウへ（順送り） |
 | `C-x +` | 大きさを揃える |
 
 ---
@@ -162,6 +177,10 @@ MELPA を追加し、`my/required-packages` の未導入分を起動時に自動
 | `magit` | git クライアント |
 | `diff-hl` | 行左端に変更マーカー（VSCode の gutter 相当） |
 | `treemacs-magit` | treemacs を magit の操作に追随させる |
+| `eat` | 端末エミュレータ（NonGNU ELPA、ビルド不要） |
+| `exec-path-from-shell` | ログインシェルから PATH を取り込む |
+
+NonGNU ELPA は Emacs 30 の既定アーカイブに含まれている（`package-archives` の既定は `("gnu" "nongnu")`）ので、追加設定なしで `eat` が取得できる。明示的に足しているのは MELPA のみ。
 
 インストール失敗時は `condition-case` で握り潰してメッセージだけ出す。1つのパッケージが取れなくても Emacs が起動不能にならないようにするため。
 
@@ -345,7 +364,103 @@ diff-hl の変更マーカーもこのパレットに合わせている。
 - **activityBarBadge** — Emacs にバッジの概念は無いが、モードラインと treemacs のプロジェクト行に自前で実装した（Git の項を参照）
 - **エディタ本体** — Peacock は VSCode でも外枠しか塗らないため、ここはテーマ（misterioso）のまま。VSCode 側の JSON にもエディタ配色は含まれていない
 
-### 9. Git（magit + diff-hl）
+### 9. PATH の取り込み（exec-path-from-shell）
+
+**macOS では Dock / Finder から起動したアプリはシェルの PATH を引き継がない。** launchd の最小 PATH になるため、homebrew 等に入れたコマンド（`claude`、`git`、`python` …）が Emacs から見つからない。
+
+実測すると GUI 起動相当の環境ではこうなる。
+
+```
+PATH = :/Applications/Emacs.app/Contents/MacOS/bin-arm64-11:...
+(executable-find "claude") => nil     ; 実体は /opt/homebrew/bin/claude
+```
+
+```elisp
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+```
+
+**取り込むのは `PATH` と `MANPATH` のみ**（`exec-path-from-shell-variables` の既定値）。API キー等の秘匿値は対象外。ログインシェルは `("-l" "-i")` で起動される。
+
+端末から起動した場合は既に PATH が通っているので、GUI 起動時のみ実行するようガードしている。
+
+**確認方法**:
+
+```elisp
+(getenv "PATH")
+(executable-find "claude")   ; nil なら通っていない
+```
+
+### 10. ターミナル（eat）
+
+VSCode の統合ターミナル相当。`C-c s` で下部の side window に開く。
+
+#### eshell / shell では TUI アプリが動かない
+
+**これが eat を入れた理由。** `eshell` と `M-x shell` は comint ベースの**行指向**インターフェースで、端末エミュレータではない。カーソル移動や ANSI エスケープを解釈する PTY を持たないため、画面全体を描き換えるアプリ（claude、vim、top、htop 等）は動かない。
+
+| 方式 | TUI アプリ | 備考 |
+|---|---|---|
+| `eshell` / `M-x shell` | ✗ | 行指向。git やファイル操作には十分 |
+| `M-x ansi-term` | △ | 端末エミュレーションはあるが遅い |
+| **`eat`** | ○ | **純 elisp、ビルド不要。採用** |
+| vterm | ○ | 最速だが C モジュールのビルドに cmake が必要 |
+
+なお eshell かどうかは起動時のバナー `Welcome to the Emacs shell`（`eshell-banner-message` の既定値）で判別できる。eat では出ない。
+
+#### side window での表示
+
+```elisp
+(setq display-buffer-alist
+      (append display-buffer-alist
+              '(("\\`\\*\\(?:.*-\\)?eat\\*\\(?:<[0-9]+>\\)?\\'\\|\\`\\*e?shell\\*\\'"
+                 (display-buffer-in-side-window)
+                 (side . bottom)          ; 'top / 'left / 'right に変更可
+                 (slot . 0)
+                 (window-height . 0.3)    ; フレーム高さの30%
+                 (window-parameters
+                  (no-delete-other-windows . t))))))
+```
+
+`no-delete-other-windows` を付けると `C-x 1` でも消えない（VSCode のパネルと同じ挙動）。左は treemacs が使っているので下に出している。
+
+正規表現は `*eat*` / `*eat*<2>` / `*tank-eat*`（`eat-project` は `project-prefixed-buffer-name` を使う）/ `*eshell*` / `*shell*` にマッチし、`*scratch*` `*Messages*` には誤爆しないことを確認済み。
+
+`C-c s` は VSCode の Ctrl+` と同じ3状態にしてある（閉じている→開いて移動 / 開いている→移動 / フォーカス中→閉じる）。
+
+### 11. ウィンドウ間の移動
+
+```elisp
+(require 'windmove)
+(global-set-key (kbd "C-c <left>")  #'windmove-left)
+;; … right / up / down も同様
+
+(setq winner-dont-bind-my-keys t)
+(winner-mode 1)
+(global-set-key (kbd "C-c u") #'winner-undo)
+(global-set-key (kbd "C-c U") #'winner-redo)
+```
+
+どちらも Emacs 同梱。ハマりどころが3つある。
+
+**1. `S-<arrow>` を使うとシフト選択が死ぬ** — windmove の既定は `S-<arrow>` だが、これは**シフト+矢印の範囲選択**と衝突する。`S-<left>` は明示的な割り当てを持たず（`key-binding` は `nil` を返す）、shift-translation という別機構で選択に使われているため、明示的に上書きすると選択側が動かなくなる。完全に空いている `C-c <arrow>` を使っている。
+
+**2. `windmove-default-keybindings` にプレフィックスは渡せない** — 受け付けるのは `shift` / `meta` / `control` などの修飾キーのみ。`C-c` を渡すと `Two bases given in one event` で起動時にエラーになる。個別に `global-set-key` する。
+
+**3. winner-mode は既定で `C-c <left>` / `C-c <right>` を奪う** — windmove と正面衝突するので `winner-dont-bind-my-keys` を `t` にしてから有効化する。
+
+矢印キーの衝突状況（実測）:
+
+| キー | 既定の割り当て |
+|---|---|
+| `S-<arrow>` | なし（ただしシフト選択が使用） |
+| `M-<left>` / `M-<right>` | `left-word` / `right-word` |
+| `C-<left>` / `C-<up>` | `left-word` / `backward-paragraph` |
+| `s-<left>` | `move-beginning-of-line` |
+| **`C-c <arrow>`** | **空き** |
+
+### 12. Git（magit + diff-hl）
 
 ```elisp
 (require 'magit)
@@ -436,7 +551,7 @@ treemacs 側のバッジを `treemacs-mode-hook` に登録すると**動かな�
 | magit 内 `c c` | コミット（`C-c C-c` で確定） |
 | magit 内 `?` | ヘルプ（全キー一覧） |
 
-### 10. tree-sitter（構文解析ベースのハイライト）
+### 13. tree-sitter（構文解析ベースのハイライト）
 
 `*-ts-mode` は Emacs 30 に**同梱されている**（rust / typescript / tsx / python / json / yaml / toml / go / c / java / ruby / php / lua / dockerfile / cmake / html / elixir 等）。同梱されていないのは terraform と markdown くらい。
 
@@ -502,7 +617,7 @@ Emacs 側を新しくして ABI 15 に対応した場合は、タグを上げ直
 
 なお **tree-sitter を入れなくてもシンタックスハイライトは効いている**（`font-lock-mode` が標準で有効）。tree-sitter は精度を上げるもので、有無で色が付く／付かないが変わるわけではない。
 
-### 11. macOS のタイトルバー
+### 14. macOS のタイトルバー
 
 macOS のタイトルバーは OS 側の描画なので任意色にできない。`ns-transparent-titlebar` で透過させ、フレーム背景と一体化させる方式を採る（Emacs 26 で導入された NS ポートのフレームパラメータ）。
 
