@@ -21,6 +21,8 @@
 | `C-c w` | サイドウィンドウ（treemacs + ターミナル）を一括開閉 |
 | `C-c ← ↑ → ↓` | 上下左右のウィンドウへ移動 |
 | `C-c u` / `C-c U` | ウィンドウ配置を元に戻す / やり直す |
+| `C-c x` | 今のバッファを閉じる（VSCode の Ctrl+W 相当） |
+| `C-c <tab>` / `C-c S-<tab>` | 次 / 前のエディタタブへ |
 
 `C-c t` は「control を押しながら `c` → 離す → `t`」の順に押す（同時押しではない）。`C-c T` の最後は大文字なので `shift + t`。
 
@@ -28,13 +30,73 @@
 
 ### treemacs のツリー内
 
+最初に覚えるのは **`?`**（`treemacs-common-helpful-hydra`）。その場で主要キーの一覧が出る。`C-?` はさらに詳細版。以下は実際の `treemacs-mode-map` から抜き出したもの。
+
+**移動**
+
 | キー | 動作 |
 |---|---|
-| `RET` | 開く／展開 |
-| `TAB` | 展開のみ（フォーカスは移さない） |
+| `n` / `p` | 1行下 / 上 |
+| `M-n` / `M-p` | 同じ階層の次 / 前へ（兄弟ノード間をスキップ） |
+| `u` | 親ディレクトリへ |
+| `C-j` / `C-k` | 次 / 前のプロジェクトへ |
+| `TAB` | ディレクトリの開閉 |
+| `h` / `l` | 閉じる / 開く（vim 風） |
+| `H` | 親ノードごと畳む |
+| `S-TAB` | 全プロジェクトを畳む |
+| `M-H` / `M-L` | ルートを1つ上 / 下へ |
+
+**開く** — `o` プレフィックス
+
+`RET` は今のウィンドウで開く。`global-tab-line-mode` を入れてあるので、開いたファイルは自動でタブとして並ぶ（＝「新規タブで開く」は `RET` だけで済む）。
+
+| キー | 動作 |
+|---|---|
+| `RET` / `l` | 開く（タブが増える） |
+| `o v` / `o h` | 縦分割 / 横分割して開く |
+| `o o` | 分割せず既存ウィンドウで開く |
+| `o c` | 開いて treemacs を閉じる |
+| `o r` | 直近使ったウィンドウで開く |
+| `o x` | 外部アプリで開く（macOS の `open`） |
+| `o a a` / `o a v` / `o a h` | ace-window でウィンドウを選んでから開く |
+| `P` | peek モード。カーソルを動かすだけで中身をプレビュー |
+
+フレーム全体のタブ（tab-bar = 作業単位）で開きたい場合は treemacs ではなく `C-x t f`（`find-file-other-tab`）。tab-line がファイル単位、tab-bar が作業単位。
+
+**ファイル操作**
+
+| キー | 動作 |
+|---|---|
+| `c f` / `c d` | ファイル / ディレクトリを新規作成 |
+| `R` / `m` / `d` | リネーム / 移動 / 削除 |
+| `M-m` | 一括操作（複数選択してまとめて） |
+| `y a` / `y r` / `y n` | 絶対パス / 相対パス / ファイル名をコピー |
+| `!` / `M-!` | そのノード / プロジェクトルートでシェルコマンド実行 |
+| `g` / `r` | ツリーを更新 |
+| `s` | ソート順を変更 |
+| `b` | ブックマーク登録（`C-x r b` で呼び出し） |
+
+**表示トグル** — `t` プレフィックス
+
+| キー | 動作 |
+|---|---|
+| `t h` | 隠しファイルの表示切り替え |
+| `t i` | gitignore 対象を隠す |
+| `t w` | 幅の固定を解除 |
+| `t g` / `t f` / `t a` | git 表示 / follow モード / filewatch |
+| `t n` / `t v` | インデントガイド / フリンジインジケータ |
+| `w` / `<` / `>` / `=` | 幅を指定 / 縮める / 広げる / 内容に合わせる |
+| `W` | 一時的に大幅に広げる（長いパス確認用） |
+
+**その他**
+
+| キー | 動作 |
+|---|---|
 | `q` | 閉じる（状態は保持される） |
 | `Q` | バッファごと破棄 |
-| `?` | ヘルプ（全キー一覧） |
+| `?` / `C-?` | ヘルプ（全キー一覧 / 詳細版） |
+
+今開いているファイルの位置までツリーを展開したい場合は `M-x treemacs-find-file`。
 
 **プロジェクト操作** — `C-c C-p` 配下
 
@@ -67,10 +129,22 @@
 |---|---|
 | `n` / `p` | 次／前の行へ |
 | `TAB` | 展開／折りたたみ（差分が見える） |
-| `s` / `S` | ステージ（カーソル位置 / 全部） |
-| `u` | アンステージ |
+| `s` / `S` | ステージ（カーソル位置 / 変更のあるファイル全部） |
+| `u` / `U` | アンステージ / 全部アンステージ |
+| `k` | 変更を破棄（`magit-delete-thing`） |
+| `x` | reset（`magit-reset-quickly`） |
 | `c c` | コミット → メッセージ入力 → `C-c C-c` で確定（`C-c C-k` で中止） |
+| `c a` | 直前のコミットを amend |
 | `P p` | push（upstream へ） |
+| `F p` | pull |
+| `f` | fetch |
+| `l l` | ログ |
+| `d d` | diff |
+| `b b` | ブランチ切り替え |
+| `z` | stash |
+| `y` | ref の一覧 |
+| `!` | 任意の git コマンドを実行 |
+| `$` | git の生の実行ログを見る |
 | `g` | リフレッシュ |
 | `?` | ヘルプ（全キー一覧） |
 | `q` | 閉じる（バッファは裏に残る） |
@@ -92,6 +166,58 @@ diff-hl が有効なバッファでのみ生えるキー。
 | `C-x v S` | その変更だけを stage する |
 
 マーカーを目で探さなくても `C-x v ]` で変更箇所に飛べる。`C-x v S` は magit を開かずに部分ステージできる。
+
+### エディタタブ（tab-line）
+
+各ウィンドウの上端に、そこで開いたバッファがタブで並ぶ。VSCode の editor tabs 相当。
+
+| 操作 | 動作 |
+|---|---|
+| タブの `✕` をクリック | そのバッファを閉じる（`kill-buffer`） |
+| タブをクリック | 切り替え |
+| `C-c <tab>` / `C-c S-<tab>` | 次 / 前のタブへ |
+| `C-c x` | 今のバッファを閉じる |
+
+treemacs と eat のサイドウィンドウにはタブを出さない設定にしてある。
+
+### Markdown（gfm-mode）の中
+
+`.md` は `gfm-mode` で開き、記法を隠した状態（プレビュー相当）で直接編集する。
+
+| キー | 動作 |
+|---|---|
+| `C-c C-x C-m` | 記法の表示 / 非表示を切り替え |
+| `C-c C-x C-i` | 画像のインライン表示を切り替え |
+| `S-TAB` | 全体を 目次 → アウトライン → 全文 で循環 |
+| `TAB` | カーソル位置の見出しを折りたたむ |
+| `C-c C-n` / `C-c C-p` | 次 / 前の見出しへ |
+| `C-c C-f` / `C-c C-b` | 同レベルの見出しへ |
+| `C-c C-u` | 親見出しへ |
+| `C-c C-o` | リンク・`[[wikilink]]` を開く |
+| `M-p` / `M-n` | 次 / 前のリンクへ |
+| `C-c C-d` | 文脈依存。チェックボックス切替・参照/脚注ジャンプ・表の整形 |
+| `C-c C-l` / `C-c C-i` | リンク / 画像の挿入・編集 |
+| `C-c C-s b` / `i` / `c` / `q` / `C` | 太字 / イタリック / インラインコード / 引用 / コードブロック |
+| `C-c C-s t` / `[` / `f` / `-` | 表 / チェックボックス / 脚注 / 水平線 |
+| `M-RET` | リストアイテムを追加（マーカーとインデントを自動判定） |
+| `C-c '` | コードブロックを別バッファでその言語のモードで編集（要 `edit-indirect`） |
+| `C-c C-c c` / `u` | 未定義の参照リンク / 未使用の参照定義を検出 |
+| `C-c C-c n` | 順序付きリストの番号を振り直し |
+| `C-c C-c l` | 分割プレビュー（別バッファに HTML を出す方式。通常は不要） |
+
+**表の編集**（カーソルが表の中にある時）
+
+| キー | 動作 |
+|---|---|
+| `TAB` / `S-TAB` | 次 / 前のセルへ。移動時に自動で整形し直す |
+| `C-c ← → ↑ ↓` | 行・列の移動 |
+| `C-c S-↑` / `S-↓` | 行の削除 / 挿入 |
+| `C-c S-←` / `S-→` | 列の削除 / 挿入 |
+| `C-c C-c ^` | 行のソート |
+| `C-c C-c \|` | リージョンを表に変換 |
+| `C-c C-c t` | 表の転置 |
+
+長いメモを読む時は `S-TAB` で目次表示にしてから目的の見出しで `TAB`、が基本操作。
 
 ### eat（ターミナル）の中
 
@@ -252,12 +378,35 @@ VSCode の Explorer 相当。左に常駐するサイドバー。
 
 | 設定 | 値 | 意味 |
 |---|---|---|
-| `treemacs-width` | 45 | 幅（デフォルトは 35） |
+| `treemacs-width` | 70 | 幅（デフォルトは 35） |
+| `treemacs-show-hidden-files` | `t` | ドットファイルを表示する |
+| `treemacs-width-is-initially-locked` | `nil` | 幅のロックを外す（既定は `t` でマウス変更不可） |
 | `treemacs-follow-mode` | 有効 | 編集中のバッファをツリー側で自動追跡 |
 | `treemacs-filewatch-mode` | 有効 | ファイルの増減を検知して自動更新 |
 | `treemacs-git-mode` | `'simple` | git の状態でファイル名を色分け（git コマンドのみ使用） |
 
 アイコンは `treemacs-nerd-icons` で nerd-icons に統一する（既定はビットマップ画像）。
+
+#### 隠しファイルの扱い
+
+`.claude/`（スキル定義・エージェント定義・`settings.json`）が実質の作業対象なので表示する。`.github/` `.obsidian/` `.gitignore` も同様。一時的に切り替えるならツリー内で `t h`。
+
+ただし `.git` は中身が数千ファイルあってツリーが埋まるため、常に隠す。これは `treemacs-show-hidden-files` とは**別系統**で、`treemacs-ignored-file-predicates` に入れたものは `t h` でも出てこない「絶対に出さない」枠になる。
+
+```elisp
+(defun my/treemacs-ignore-git-dir (file _path)
+  (string= file ".git"))
+(add-to-list 'treemacs-ignored-file-predicates #'my/treemacs-ignore-git-dir)
+```
+
+**`setq` で置き換えないこと。** 既定値には `.` / `..` / ロックファイル / flycheck の一時ファイルを弾く述語（macOS では `.DS_Store` も）が入っているので、`add-to-list` で足す。
+
+実際の適用結果（tank 直下）:
+
+```
+.claude .claudeignore .gitignore .gitmodules .obsidian .vscode .tmp   → 表示
+.git .DS_Store . ..                                                   → 非表示
+```
 
 ```elisp
 (require 'treemacs-nerd-icons)
@@ -280,6 +429,24 @@ C-x t f = find-file-other-tab
 |---|---|
 | `C-c t` | `treemacs`（開閉） |
 | `C-c T` | `treemacs-select-window`（ツリーへカーソル移動） |
+
+#### 幅の変え方とドラッグのハマりどころ
+
+treemacs の既定は幅ロック（`treemacs-width-is-initially-locked` が `t`）で、マウスでは変更できない。`nil` にして解除してある。
+
+ただし解除しても**掴む場所を間違えると効かない**。ドラッグの開始点がフリンジだと `<left-fringe> <drag-mouse-1>` という別イベントになり、`<left-fringe> <drag-mouse-1> is undefined` で終わる（treemacs が持っているのは `[drag-mouse-1]` だけ）。左フリンジは diff-hl のマーカー用に 16px へ広げてあるので特に当たりやすい。
+
+掴むのは**ツリーと編集画面の間の境界線（window-divider）**の方。この線は `window-divider-default-right-width` が実質の当たり判定なので、1px のままではまず掴めない。4px にしてある。
+
+キーで変える場合（こちらの方が確実）:
+
+| キー | 動作 |
+|---|---|
+| `w` | 幅を数値で指定（`C-u 80 w` のように数引数でも可） |
+| `>` / `<` | 広げる / 狭める |
+| `=` | 中身の長さに合わせる |
+| `W` | 一時的に大幅に広げるトグル（長いパス確認用） |
+| `t w` | ロックのその場での切り替え |
 
 #### 背景色の変え方
 
@@ -337,6 +504,8 @@ diff-hl の変更マーカーもこのパレットに合わせている。
 | `diff-hl-delete` | `#8B0000` | 削除 |
 
 **アルファ値について**: Emacs のフェイスは透明度を持てない。VSCode 側の `#E8A24A99`（アルファ 0x99 = 60%）のような指定は、背景色 `#1A0A00` の上で**事前に合成した不透明色**に変換する必要がある。
+
+**境界線の太さ**: `window-divider-default-right-width` は見た目の線の太さと**マウスの当たり判定を兼ねている**。VSCode の sash のように「細く見えるが掴む範囲は広い」という分離ができないため、ドラッグでウィンドウ幅を変えたいなら太くするしかない。4px にしてある（1px では実質掴めない）。細い線に戻す場合はマウスでのリサイズを諦めることになる。
 
 ```
 #E8A24A を 60% で #1A0A00 に合成 → #96652C
@@ -626,6 +795,97 @@ macOS のタイトルバーは OS 側の描画なので任意色にできない�
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
 ```
 
+### 15. エディタタブ（tab-line）
+
+init.el 上の位置は treemacs と「UI の配色」の間。
+
+**`tab-bar` と `tab-line` は別物。**
+
+| | 単位 | VSCode で言うと |
+|---|---|---|
+| `tab-bar` | フレーム全体。ウィンドウ配置ごと切り替える | ウィンドウ / ワークスペース |
+| `tab-line` | 各ウィンドウの上端。そこで開いたバッファが並ぶ | エディタタブ |
+
+「開いているファイルに ✕ ボタンが付いたタブ」が欲しい場合は後者。Emacs 27 から同梱で、✕ ボタンも標準で付く。
+
+```elisp
+(require 'tab-line)
+
+(setq tab-line-close-button-show t
+      tab-line-new-button-show nil
+      tab-line-separator " "
+      tab-line-close-tab-function #'kill-buffer)
+
+(dolist (mode '(treemacs-mode eat-mode))
+  (add-to-list 'tab-line-exclude-modes mode))
+
+(global-tab-line-mode 1)
+```
+
+`tab-line-close-tab-function` の既定は `bury-buffer` で、**✕ を押してもタブから消えるだけでバッファは残る**。VSCode の ✕ と同じ挙動にするため `kill-buffer` に変えている。
+
+サイドウィンドウ（treemacs / eat）にタブが出ると邪魔なので `tab-line-exclude-modes` に足す。既定は `(completion-list-mode)` のみ。
+
+配色は `my/apply-peacock-chrome` 側で `tab-line` / `tab-line-tab` / `tab-line-tab-current` / `tab-line-tab-inactive` / `tab-line-highlight` に指定する。**アクティブなタブだけエディタ本体と同じ `#0D0D0D`** にして地続きに見せ、非アクティブは activityBar と同じ `#1A0A00` に落としている。
+
+### 16. Markdown（プレビュー状態のまま編集する）
+
+init.el 上の位置は tree-sitter と macOS タイトルバーの間。
+
+VSCode は「ソース」と「プレビュー」を別ペインに並べる方式で、プレビュー側は生成された HTML なので編集できない。`markdown-mode` の `markdown-hide-markup` は方式が違い、**別バッファを作らずファイルを開いているバッファ自体に `invisible` / `display` のテキストプロパティを被せて記法を隠す**。見えているものが実ファイルそのものなので、そのまま編集できる。Obsidian の Live Preview と同じモデル。
+
+実際の見え方（tank のメモを読ませて検証）:
+
+```
+元ファイル                              Emacs 上の表示
+# GTD と org-mode                   →   GTD と org-mode         （2倍サイズ）
+**Getting Things Done**             →   Getting Things Done     （太字表示）
+- 2分以内で終わる                    →   ● 2分以内で終わる
+---                                 →   ────────────────────
+`markdown-hide-markup`              →   markdown-hide-markup
+```
+
+表はそのまま残る。
+
+```elisp
+(require 'markdown-mode)
+
+(add-to-list 'auto-mode-alist '("\\.md\\'" . gfm-mode))
+(add-to-list 'auto-mode-alist '("\\.markdown\\'" . gfm-mode))
+
+(setq-default markdown-hide-markup t)
+(customize-set-variable 'markdown-header-scaling t)
+
+(setq markdown-fontify-code-blocks-natively t
+      markdown-enable-wiki-links t
+      markdown-wiki-link-fontify-missing t)
+
+(add-hook 'markdown-mode-hook #'visual-line-mode)
+```
+
+#### ハマりどころ1: `setq` では効かない
+
+`markdown-hide-markup` は `make-variable-buffer-local` されている。素の `setq` は `*scratch*` だけに効いてグローバルの既定値（`nil`）が変わらないため、md を開いても**何も隠れない**。`setq-default` が要る。
+
+`markdown-header-scaling` の方は逆に `:set` で `markdown-update-header-faces` を呼んでフェイスの `:height` を書き換える defcustom なので、`setq` だと `:set` が走らず**見出しの大きさが変わらない**。`customize-set-variable` を使う。
+
+#### ハマりどころ2: `.md` は `gfm-mode` で開かないと壊れる
+
+素の `markdown-mode` は語中の `_` もイタリック記法と解釈する。記法を隠すと wikilink が崩れる。
+
+```
+[[20260813_orgmode_usage_patterns]]  →  20260813orgmodeusagepatterns
+```
+
+GFM は語中の `_` を強調と見なさない仕様で、`gfm-mode` がそれを実装している（`markdown--gfm-markup-underscore-p`）。tank のファイル名は全部 `_` 区切りなので `.md` → `gfm-mode` は必須。
+
+ついでに `gfm-mode` は `markdown-wiki-link-search-subdirectories` を `t` にするので、ファイルが月別フォルダへ移動しても `[[...]]` が追える。
+
+#### 入れなかったもの
+
+- **`variable-pitch-mode`**（プロポーショナルフォント）— 表の桁揃えは文字数ベースなので等幅でないと崩れる。メモは表が多い。`HackGen Console NF` は全角＝半角2つ分の幅で描画されるため、等幅のままなら日本語混じりの表も揃う
+- **カーソル行での記法復帰** — Obsidian は編集中の行だけ `**` が現れるが、markdown-mode は全体一括のトグル（`C-c C-x C-m`）しかない。org には `org-appear` があるが markdown 版は見つからなかった。`**` の境界が見えないまま消す事故が起きたら一時的にトグルで戻す
+
 ---
 
 ## 変更するときのメモ
@@ -634,5 +894,8 @@ macOS のタイトルバーは OS 側の描画なので任意色にできない�
 - **`customize-face` で保存すると** `custom-set-faces` ブロックに書き込まれ、手書きの `set-face-attribute` と混ざって分かりにくくなる。どちらかに寄せること（現状は手書きに統一）
 - **テーマを変える**: `load-theme` の行を差し替えるだけ。外枠の配色は advice で維持される
 - **パッケージを増やす**: `my/required-packages` に追記すれば次回起動時に自動で入る。新しいフェイスに色を付ける場合は `my/apply-peacock-chrome` に足す（適用は末尾で行われるので順序は気にしなくてよい）
-- **treemacs の幅を変える**: `treemacs-width` を書き換える。ただし `treemacs-width-is-initially-locked` が `t` なのでマウスのドラッグでは変わらない。一時的に変えるならツリー内で `treemacs-toggle-fixed-width` → `treemacs-increase-width` / `treemacs-decrease-width`
+- **treemacs の幅を変える**: 恒久的に変えるなら `treemacs-width` を書き換える。マウスでのドラッグも可（`treemacs-width-is-initially-locked` を `nil` にしてある）。キーで変えるならツリー内で `w`（数値指定）/ `>` / `<` / `=`
 - **tree-sitter の言語を足す**: `treesit-language-source-alist` に追記して `M-x treesit-install-language-grammar`。**バージョンを固定すること**（ABI の項を参照）
+- **treemacs に出したくないものを増やす**: `treemacs-ignored-file-predicates` に `add-to-list` で述語を足す（`setq` で潰さない）。ドットファイル全体の表示は `treemacs-show-hidden-files`、個別の恒久除外はこちら、と役割が違う
+- **markdown 系の変数を足す**: バッファローカルかどうかを `C-h v` で確認してから書く。`(buffer-local)` と出るものは `setq-default`、`:set` を持つ defcustom は `customize-set-variable`、それ以外は `setq`。素の `setq` で書いて「効かない」となるのはだいたいこれ
+- **バッチモードで見え方を検証する**: `emacs --batch -l init.el` に、バッファへ font-lock を適用してから `invisible` / `display` プロパティを解釈してテキストを組み直すスクリプトを渡すと、GUI を開かずに「画面に何が見えるか」を確認できる（記法が隠れているか、wikilink が壊れていないか等）

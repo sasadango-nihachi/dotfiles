@@ -21,7 +21,8 @@
     magit
     treemacs-magit
     eat
-    exec-path-from-shell)
+    exec-path-from-shell
+    markdown-mode)
   "この設定が前提とするパッケージ。起動時に未導入なら自動で入れる。")
 
 (defun my/ensure-packages ()
@@ -116,11 +117,33 @@
 
 (require 'treemacs)
 
-(setq treemacs-width 45
+(setq treemacs-width 55
       treemacs-position 'left
       treemacs-indentation 2
-      treemacs-show-hidden-files nil
+      treemacs-show-hidden-files t         ; ドットファイルを表示する
+      treemacs-width-is-initially-locked nil ; マウスで幅を変えられるようにする
       treemacs-follow-after-init t)       ; 開いているファイルの位置にツリーを追随させる
+
+;; NOTE: treemacs の既定は幅ロック（t）で、マウスドラッグでは変わらない。
+;;       解除しても掴む場所には注意が要る。ドラッグの開始点がフリンジだと
+;;       <left-fringe> <drag-mouse-1> という別イベントになり「undefined」で終わる
+;;       （treemacs が持つのは [drag-mouse-1] だけ）。
+;;       左フリンジは diff-hl のために 16px に広げてあるので特に当たりやすい。
+;;       掴むのはツリーと編集画面の間の境界線（window-divider）の方。
+;;       キーで変えるなら w（数値指定）/ > / < / = 、一時的なロック解除は t w。
+
+;; NOTE: 隠しファイルを出す理由は .claude/ が実質の作業対象だから
+;;       （スキル定義・エージェント定義・settings.json）。
+;;       .github/ .obsidian/ .gitignore なども同様に触る対象。
+;;       バッファ内で t h (treemacs-toggle-show-dotfiles) で一時的に切り替えできる。
+
+;; ただし .git だけは中身が数千ファイルあって邪魔なので常に隠す。
+;; treemacs-show-hidden-files とは別系統で、ignored は「絶対に出さない」枠。
+;; NOTE: 既定値には . / .. / ロックファイル等を弾く述語が入っているので
+;;       setq で置き換えず add-to-list で足すこと。
+(defun my/treemacs-ignore-git-dir (file _path)
+  (string= file ".git"))
+(add-to-list 'treemacs-ignored-file-predicates #'my/treemacs-ignore-git-dir)
 
 (treemacs-follow-mode 1)      ; カーソルのあるバッファをツリー側で自動追跡
 (treemacs-filewatch-mode 1)   ; ファイルの増減を検知してツリーを自動更新
@@ -136,6 +159,34 @@
 ;;       C-c <文字> は利用者用に予約された領域なのでそちらを使う。
 (global-set-key (kbd "C-c t") #'treemacs)                ; 開閉
 (global-set-key (kbd "C-c T") #'treemacs-select-window)  ; ツリーへカーソル移動
+
+;;; ---------------------------------------------------------------
+;;; エディタタブ（VSCode の editor tabs = ✕ ボタン付きのファイルタブ）
+;;; ---------------------------------------------------------------
+;; NOTE: tab-bar と tab-line は別物。
+;;   tab-bar  = フレーム全体のワークスペース切り替え（VSCode のウィンドウに近い）
+;;   tab-line = 各ウィンドウの上端に、そこで開いたバッファを並べる（VSCode のタブ）
+;; 欲しいのは後者。Emacs 27 から同梱で、✕ ボタンも標準で付く。
+
+(require 'tab-line)
+
+(setq tab-line-close-button-show t          ; タブに ✕ を出す
+      tab-line-new-button-show nil          ; + は不要（C-x C-f で開くため）
+      tab-line-separator " "
+      ;; 既定の bury-buffer は「タブから消えるがバッファは残る」。
+      ;; VSCode の ✕ と同じ「閉じる」にする。
+      tab-line-close-tab-function #'kill-buffer)
+
+;; サイドウィンドウ（treemacs / eat）にはタブを出さない
+(dolist (mode '(treemacs-mode eat-mode))
+  (add-to-list 'tab-line-exclude-modes mode))
+
+(global-tab-line-mode 1)
+
+;; キーボードから閉じる / 移動する
+(global-set-key (kbd "C-c x")       #'kill-current-buffer)   ; VSCode の Ctrl+W 相当
+(global-set-key (kbd "C-c <tab>")   #'tab-line-switch-to-next-tab)
+(global-set-key (kbd "C-c S-<tab>") #'tab-line-switch-to-prev-tab)
 
 ;;; ---------------------------------------------------------------
 ;;; UI の配色（VSCode Peacock 相当: 外枠だけを塗る）
@@ -179,6 +230,24 @@
                       :background "#C17A30" :foreground "#1A0A00" :weight 'bold)
   (set-face-attribute 'tab-bar-tab-inactive nil
                       :background "#1A0A00" :foreground "#96652C")
+
+  ;; エディタタブ = VSCode の editorGroupHeader / tab
+  ;; アクティブなタブだけエディタ本体と同じ背景にして「地続き」に見せる。
+  (set-face-attribute 'tab-line nil
+                      :background "#1A0A00" :foreground "#96652C"
+                      :height 0.9 :box nil :inherit 'unspecified)
+  (set-face-attribute 'tab-line-tab nil
+                      :background "#0D0D0D" :foreground "#E8A24A"
+                      :box '(:line-width 3 :color "#0D0D0D") :inherit 'unspecified)
+  (set-face-attribute 'tab-line-tab-current nil
+                      :background "#0D0D0D" :foreground "#E8A24A" :weight 'bold
+                      :box '(:line-width 3 :color "#0D0D0D") :inherit 'unspecified)
+  (set-face-attribute 'tab-line-tab-inactive nil
+                      :background "#1A0A00" :foreground "#96652C"
+                      :box '(:line-width 3 :color "#1A0A00") :inherit 'unspecified)
+  (set-face-attribute 'tab-line-highlight nil          ; マウスホバー
+                      :background "#C17A30" :foreground "#1A0A00"
+                      :box '(:line-width 3 :color "#C17A30"))
 
   ;; 細部
   (set-face-attribute 'cursor nil :background "#E8A24A")
@@ -225,8 +294,11 @@
             (face-remap-add-relative 'fringe  :background "#1A0A00")))
 
 ;; ウィンドウ境界線を実際に描画させる
+;; NOTE: 右側の幅は「見た目の線の太さ」と「マウスで掴める当たり判定」を兼ねる。
+;;       1px だとウィンドウ境界をドラッグして掴むのが実質不可能なので 4px にしてある。
+;;       細い線に戻したい場合は 1 に下げる（代わりにマウスでのリサイズは諦める）。
 (setq window-divider-default-places t
-      window-divider-default-right-width 1
+      window-divider-default-right-width 4
       window-divider-default-bottom-width 1)
 (window-divider-mode 1)
 
@@ -474,6 +546,67 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
                  ("\\.tsx\\'"   . tsx-ts-mode)
                  ("\\.ya?ml\\'" . yaml-ts-mode)))
   (add-to-list 'auto-mode-alist entry))
+
+;;; ---------------------------------------------------------------
+;;; Markdown（プレビュー状態のまま編集する）
+;;; ---------------------------------------------------------------
+;; VSCode は「ソース」と「プレビュー」を別ペインに並べる方式で、
+;; プレビュー側は生成された HTML なので編集できない。
+;; markdown-mode の markdown-hide-markup は方式が違う。
+;; 別バッファを作らず、ファイルを開いているバッファ自体に
+;; invisible / display のテキストプロパティを被せて記法を隠す。
+;; 見えているものが実ファイルそのものなので、そのまま編集できる。
+;; Obsidian の Live Preview と同じモデル。
+;;
+;; NOTE: 唯一の差は「カーソルを乗せても記法が戻らない」こと。
+;;       org には org-appear があるが markdown 版は無い。
+;;       ** の境界が見えないまま消してしまう事故が起きたら
+;;       C-c C-x C-m (markdown-toggle-markup-hiding) で一時的に戻す。
+
+(require 'markdown-mode)
+
+;; .md は gfm-mode（GitHub Flavored Markdown）で開く。
+;; NOTE: これは見た目の好みではなく必須。素の markdown-mode は語中の _ も
+;;       イタリックの記法と解釈するため、markdown-hide-markup と併用すると
+;;       [[20260813_orgmode_usage_patterns]] が
+;;       「20260813orgmodeusagepatterns」と表示されてしまう（_ が隠される）。
+;;       GFM は語中の _ を強調と見なさない仕様で、gfm-mode はそれを実装している
+;;       （markdown--gfm-markup-underscore-p）。tank のファイル名は全部 _ 区切り。
+;;       ついでに gfm-mode は wikilink をサブディレクトリまで探しに行く
+;;       （markdown-wiki-link-search-subdirectories t）ので、
+;;       memo が月別フォルダへ移動しても [[...]] が追える。
+(add-to-list 'auto-mode-alist '("\\.md\\'" . gfm-mode))
+(add-to-list 'auto-mode-alist '("\\.markdown\\'" . gfm-mode))
+
+;; NOTE: markdown-hide-markup は make-variable-buffer-local されている。
+;;       素の setq だと *scratch* だけに効いて、markdown ファイルを開いても
+;;       グローバルの既定値（nil）が読まれるため何も隠れない。setq-default が要る。
+(setq-default markdown-hide-markup t)           ; ** _ [] () を隠しリストマーカーを記号化
+
+;; NOTE: markdown-header-scaling は :set で markdown-update-header-faces を呼んで
+;;       フェイスの :height を書き換える defcustom。setq では :set が走らず
+;;       見出しの大きさが変わらないので customize-set-variable を使う。
+(customize-set-variable 'markdown-header-scaling t)  ; 見出しを 2.0 1.7 1.4 1.1 1.0 1.0 で拡大
+
+(setq markdown-fontify-code-blocks-natively t   ; コードブロックを言語のフェイスで着色
+      markdown-enable-wiki-links t              ; [[wikilink]]（tank / Obsidian の記法）
+      markdown-wiki-link-fontify-missing t)     ; リンク先が無い [[...]] を色で警告
+
+;; NOTE: variable-pitch-mode（プロポーショナルフォント）は入れない。
+;;       tank のメモは表が多く、表の桁揃えは文字数ベースなので
+;;       等幅でないと崩れる。HackGen Console NF は全角＝半角2つ分の
+;;       幅で描画されるため、等幅のままなら日本語混じりの表も揃う。
+
+;; 日本語は1行が長くなるのでウィンドウ幅で折り返す（ファイルには改行を入れない）
+(add-hook 'markdown-mode-hook #'visual-line-mode)
+
+;; 主なキー（markdown-mode 標準）
+;;   C-c C-x C-m  記法の表示/非表示トグル
+;;   C-c C-x C-i  画像のインライン表示トグル
+;;   TAB / S-TAB  見出しの折りたたみ / 全体のアウトライン切り替え
+;;   C-c C-d      文脈依存。チェックボックス切替・参照/脚注ジャンプ・表の整形
+;;   C-c C-o      リンク・wikilink を開く
+;;   C-c C-c c    未定義の参照リンクを検出
 
 ;;; ---------------------------------------------------------------
 ;;; macOS のタイトルバー
