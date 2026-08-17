@@ -57,6 +57,18 @@ NESTED_FILES=(
 #       auto-save-list/ が同居するため、init.el だけをリンクしたい
 #   リポジトリ内のパスをそのまま書く（= ホームでのパスと一致する）
 
+CONFLICT_FILES=(
+    ".emacs"
+    ".emacs.el"
+)
+# ↑ 「あるとリンク対象の設定が読まれなくなる」ファイルのリスト
+#   リンク先そのものではないので backup_if_exists では検知できない
+#   例: Emacs は init ファイルを
+#         ~/.emacs.el → ~/.emacs → ~/.emacs.d/init.el
+#       の順に探し、最初に見つかった1つだけを読む。
+#       そのため ~/.emacs が残っていると
+#       ~/.emacs.d/init.el へのリンクを張っても一切読まれない。
+
 #-------------------------------------------
 # 色付き出力用の関数
 #-------------------------------------------
@@ -144,6 +156,30 @@ create_symlink() {
     #   結果: $dest -> $src へのリンクが作成される
 
     success "Linked: $dest -> $src"
+}
+
+#-------------------------------------------
+# 競合ファイルの退避関数
+#-------------------------------------------
+handle_conflicts() {
+    for file in "${CONFLICT_FILES[@]}"; do
+        local target="$HOME/$file"
+
+        if [[ -L "$target" ]]; then
+        # ↑ シンボリックリンクの場合
+        #   リンク先が分からないまま消すのは危険なので警告だけ出す
+
+            warn "Conflicting symlink found: $target -> $(readlink "$target")"
+            warn "  この設定が優先されるため、不要なら手動で削除してください"
+
+        elif [[ -e "$target" ]]; then
+        # ↑ 実体ファイルの場合はバックアップへ退避
+
+            mkdir -p "$BACKUP_DIR"
+            mv "$target" "$BACKUP_DIR/"
+            warn "Moved conflicting file: $target -> $BACKUP_DIR/"
+        fi
+    done
 }
 
 #-------------------------------------------
@@ -272,6 +308,15 @@ main() {
                 warn "Skipped (not found): $DOTFILES_DIR/.config/$item"
             fi
         done
+    fi
+
+    if [[ ${#CONFLICT_FILES[@]} -gt 0 ]]; then
+    # ↑ 競合ファイルのチェック
+    #   リンクを張る前に退避しないと、リンクしても設定が読まれない
+
+        echo ""
+        info "Checking conflicting files..."
+        handle_conflicts
     fi
 
     if [[ ${#NESTED_FILES[@]} -gt 0 ]]; then
