@@ -4,240 +4,24 @@
 
 対象環境: GNU Emacs 30.2 (aarch64-apple-darwin, NS port) / macOS
 
-キーバインドの学習メモは [emacs.md](./emacs.md) を参照。こちらは設定ファイルの中身の記録。
+使い方・キー一覧は tank の `library/emacs/` を参照。こちらは設定ファイルの中身の記録。
 
 ---
 
-## キーバインド一覧
+## キーバインド一覧は tank 側
 
-自分で割り当てたもの（`C-c <文字>` は Emacs の規約で利用者用に予約された領域）。
+使い方（自分で割り当てたキー、treemacs / magit / markdown / doc-view のキー、
+Emacs 標準のキーと用語）は tank リポジトリに移した。
 
-| キー | 動作 |
-|---|---|
-| `C-c t` | treemacs の開閉 |
-| `C-c T` | treemacs へカーソル移動 |
-| `C-c s` | ターミナル（eat）の開閉・フォーカス |
-| `C-c g` | magit のステータス画面 |
-| `C-c w` | サイドウィンドウ（treemacs + ターミナル）を一括開閉 |
-| `C-c ← ↑ → ↓` | 上下左右のウィンドウへ移動 |
-| `C-c u` / `C-c U` | ウィンドウ配置を元に戻す / やり直す |
-| `C-c x` | 今のバッファを閉じる（VSCode の Ctrl+W 相当） |
-| `C-c <tab>` / `C-c S-<tab>` | 次 / 前のエディタタブへ |
+- `~/code/tank/library/emacs/keybindings.md` — 自分の設定のキー一覧
+- `~/code/tank/library/emacs/basics.md` — Emacs 標準のキー・用語
+- `~/code/tank/library/emacs/windows-and-tabs.md` — タブとウィンドウの仕組み
+- `~/code/tank/library/emacs/git-change-badge.md` — 変更ファイル数バッジ
 
-`C-c t` は「control を押しながら `c` → 離す → `t`」の順に押す（同時押しではない）。`C-c T` の最後は大文字なので `shift + t`。
-
-キー表記の対応（macOS）: `C-` = control / `M-` = option（`ESC` 単独でも代用可）/ `S-` = shift / `s-` = command。`ns-alternate-modifier` が `meta` なので option が Meta として働く。
-
-### treemacs のツリー内
-
-最初に覚えるのは **`?`**（`treemacs-common-helpful-hydra`）。その場で主要キーの一覧が出る。`C-?` はさらに詳細版。以下は実際の `treemacs-mode-map` から抜き出したもの。
-
-**移動**
-
-| キー | 動作 |
-|---|---|
-| `n` / `p` | 1行下 / 上 |
-| `M-n` / `M-p` | 同じ階層の次 / 前へ（兄弟ノード間をスキップ） |
-| `u` | 親ディレクトリへ |
-| `C-j` / `C-k` | 次 / 前のプロジェクトへ |
-| `TAB` | ディレクトリの開閉 |
-| `h` / `l` | 閉じる / 開く（vim 風） |
-| `H` | 親ノードごと畳む |
-| `S-TAB` | 全プロジェクトを畳む |
-| `M-H` / `M-L` | ルートを1つ上 / 下へ |
-
-**開く** — `o` プレフィックス
-
-`RET` は今のウィンドウで開く。`global-tab-line-mode` を入れてあるので、開いたファイルは自動でタブとして並ぶ（＝「新規タブで開く」は `RET` だけで済む）。
-
-| キー | 動作 |
-|---|---|
-| `RET` / `l` | 開く（タブが増える） |
-| `o v` / `o h` | 縦分割 / 横分割して開く |
-| `o o` | 分割せず既存ウィンドウで開く |
-| `o c` | 開いて treemacs を閉じる |
-| `o r` | 直近使ったウィンドウで開く |
-| `o x` | 外部アプリで開く（macOS の `open`） |
-| `o a a` / `o a v` / `o a h` | ace-window でウィンドウを選んでから開く |
-| `P` | peek モード。カーソルを動かすだけで中身をプレビュー |
-
-フレーム全体のタブ（tab-bar = 作業単位）で開きたい場合は treemacs ではなく `C-x t f`（`find-file-other-tab`）。tab-line がファイル単位、tab-bar が作業単位。
-
-**ファイル操作**
-
-| キー | 動作 |
-|---|---|
-| `c f` / `c d` | ファイル / ディレクトリを新規作成 |
-| `R` / `m` / `d` | リネーム / 移動 / 削除 |
-| `M-m` | 一括操作（複数選択してまとめて） |
-| `y a` / `y r` / `y n` | 絶対パス / 相対パス / ファイル名をコピー |
-| `!` / `M-!` | そのノード / プロジェクトルートでシェルコマンド実行 |
-| `g` / `r` | ツリーを更新 |
-| `s` | ソート順を変更 |
-| `b` | ブックマーク登録（`C-x r b` で呼び出し） |
-
-**表示トグル** — `t` プレフィックス
-
-| キー | 動作 |
-|---|---|
-| `t h` | 隠しファイルの表示切り替え |
-| `t i` | gitignore 対象を隠す |
-| `t w` | 幅の固定を解除 |
-| `t g` / `t f` / `t a` | git 表示 / follow モード / filewatch |
-| `t n` / `t v` | インデントガイド / フリンジインジケータ |
-| `w` / `<` / `>` / `=` | 幅を指定 / 縮める / 広げる / 内容に合わせる |
-| `W` | 一時的に大幅に広げる（長いパス確認用） |
-
-**その他**
-
-| キー | 動作 |
-|---|---|
-| `q` | 閉じる（状態は保持される） |
-| `Q` | バッファごと破棄 |
-| `?` / `C-?` | ヘルプ（全キー一覧 / 詳細版） |
-
-今開いているファイルの位置までツリーを展開したい場合は `M-x treemacs-find-file`。
-
-**プロジェクト操作** — `C-c C-p` 配下
-
-| キー | 動作 |
-|---|---|
-| `C-c C-p a` | プロジェクトを追加 |
-| `C-c C-p d` | プロジェクトを削除（ツリーから外すだけ。ファイルは消えない） |
-| `C-c C-p r` | 名前を変更 |
-| `C-c C-p c c` | 今のプロジェクトを畳む |
-| `C-c C-p c a` | 全プロジェクトを畳む |
-
-**ワークスペース操作** — `C-c C-w` 配下。プロジェクトの集合を切り替える上位概念
-
-| キー | 動作 |
-|---|---|
-| `C-c C-w a` | 作成 |
-| `C-c C-w s` | 切り替え |
-| `C-c C-w d` | 削除 |
-| `C-c C-w r` | 名前変更 |
-| `C-c C-w e` | 一覧をテキストで直接編集（まとめて編集できるので便利） |
-| `C-c C-w n` | 次のワークスペースへ |
-
-**登録の手っ取り早い方法**: 対象リポジトリのファイルを開いた状態で `M-x treemacs-add-and-display-current-project`。git リポジトリのルートを自動判定するのでパスを打たずに済む。
-
-登録内容は `~/.emacs.d/.cache/treemacs-persist` に保存され次回起動時に復元される。init.el に書く必要はない。**このファイルは `elpa/` と同じく dotfiles には含まれない**ため、別環境では改めて登録する（環境ごとにパスが違うので妥当な挙動）。
-
-### magit の中
-
-| キー | 動作 |
-|---|---|
-| `n` / `p` | 次／前の行へ |
-| `TAB` | 展開／折りたたみ（差分が見える） |
-| `s` / `S` | ステージ（カーソル位置 / 変更のあるファイル全部） |
-| `u` / `U` | アンステージ / 全部アンステージ |
-| `k` | 変更を破棄（`magit-delete-thing`） |
-| `x` | reset（`magit-reset-quickly`） |
-| `c c` | コミット → メッセージ入力 → `C-c C-c` で確定（`C-c C-k` で中止） |
-| `c a` | 直前のコミットを amend |
-| `P p` | push（upstream へ） |
-| `F p` | pull |
-| `f` | fetch |
-| `l l` | ログ |
-| `d d` | diff |
-| `b b` | ブランチ切り替え |
-| `z` | stash |
-| `y` | ref の一覧 |
-| `!` | 任意の git コマンドを実行 |
-| `$` | git の生の実行ログを見る |
-| `g` | リフレッシュ |
-| `?` | ヘルプ（全キー一覧） |
-| `q` | 閉じる（バッファは裏に残る） |
-
-`s` は**カーソル位置によって単位が変わる**。ファイル名の行なら1ファイル、`TAB` で展開して hunk 上なら塊単位、行を選択（`C-SPC` → 移動）してから押せば選んだ行だけ。
-
-vim-fugitive は magit に影響を受けており、`s` / `u` / `cc` のキー体系はほぼ同じ。vim 側の操作感がそのまま使える。
-
-### diff-hl（`C-x v` 配下）
-
-diff-hl が有効なバッファでのみ生えるキー。
-
-| キー | 動作 |
-|---|---|
-| `C-x v ]` / `C-x v [` | 次／前の変更箇所へジャンプ |
-| `C-x v *` | その場で差分をポップアップ |
-| `C-x v }` / `C-x v {` | 差分を見ながら次／前へ |
-| `C-x v n` | その変更だけを取り消す（revert hunk） |
-| `C-x v S` | その変更だけを stage する |
-
-マーカーを目で探さなくても `C-x v ]` で変更箇所に飛べる。`C-x v S` は magit を開かずに部分ステージできる。
-
-### エディタタブ（tab-line）
-
-各ウィンドウの上端に、そこで開いたバッファがタブで並ぶ。VSCode の editor tabs 相当。
-
-| 操作 | 動作 |
-|---|---|
-| タブの `✕` をクリック | そのバッファを閉じる（`kill-buffer`） |
-| タブをクリック | 切り替え |
-| `C-c <tab>` / `C-c S-<tab>` | 次 / 前のタブへ |
-| `C-c x` | 今のバッファを閉じる |
-
-treemacs と eat のサイドウィンドウにはタブを出さない設定にしてある。
-
-### Markdown（gfm-mode）の中
-
-`.md` は `gfm-mode` で開き、記法を隠した状態（プレビュー相当）で直接編集する。
-
-| キー | 動作 |
-|---|---|
-| `C-c C-x C-m` | 記法の表示 / 非表示を切り替え |
-| `C-c C-x C-i` | 画像のインライン表示を切り替え |
-| `S-TAB` | 全体を 目次 → アウトライン → 全文 で循環 |
-| `TAB` | カーソル位置の見出しを折りたたむ |
-| `C-c C-n` / `C-c C-p` | 次 / 前の見出しへ |
-| `C-c C-f` / `C-c C-b` | 同レベルの見出しへ |
-| `C-c C-u` | 親見出しへ |
-| `C-c C-o` | リンク・`[[wikilink]]` を開く |
-| `M-p` / `M-n` | 次 / 前のリンクへ |
-| `C-c C-d` | 文脈依存。チェックボックス切替・参照/脚注ジャンプ・表の整形 |
-| `C-c C-l` / `C-c C-i` | リンク / 画像の挿入・編集 |
-| `C-c C-s b` / `i` / `c` / `q` / `C` | 太字 / イタリック / インラインコード / 引用 / コードブロック |
-| `C-c C-s t` / `[` / `f` / `-` | 表 / チェックボックス / 脚注 / 水平線 |
-| `M-RET` | リストアイテムを追加（マーカーとインデントを自動判定） |
-| `C-c '` | コードブロックを別バッファでその言語のモードで編集（要 `edit-indirect`） |
-| `C-c C-c c` / `u` | 未定義の参照リンク / 未使用の参照定義を検出 |
-| `C-c C-c n` | 順序付きリストの番号を振り直し |
-| `C-c C-c l` | 分割プレビュー（別バッファに HTML を出す方式。通常は不要） |
-
-**表の編集**（カーソルが表の中にある時）
-
-| キー | 動作 |
-|---|---|
-| `TAB` / `S-TAB` | 次 / 前のセルへ。移動時に自動で整形し直す |
-| `C-c ← → ↑ ↓` | 行・列の移動 |
-| `C-c S-↑` / `S-↓` | 行の削除 / 挿入 |
-| `C-c S-←` / `S-→` | 列の削除 / 挿入 |
-| `C-c C-c ^` | 行のソート |
-| `C-c C-c \|` | リージョンを表に変換 |
-| `C-c C-c t` | 表の転置 |
-
-長いメモを読む時は `S-TAB` で目次表示にしてから目的の見出しで `TAB`、が基本操作。
-
-### eat（ターミナル）の中
-
-| キー | 動作 |
-|---|---|
-| `C-c C-e` | semi-char モード（既定）と emacs モードの切り替え |
-| `C-c C-k` | char モード。キー入力を全部端末側へ渡す |
-
-TUI アプリ操作中に矢印キーや `C-c` が効かない場合は char モードにする。
-
-### 標準のウィンドウ操作（参考）
-
-| キー | 動作 |
-|---|---|
-| `C-x 2` / `C-x 3` | 上下 / 左右に分割 |
-| `C-x 0` / `C-x 1` | 今のを閉じる / 他を全部閉じる |
-| `C-x o` | 次のウィンドウへ（順送り） |
-| `C-x +` | 大きさを揃える |
+**この文書は `init.el` そのものの解説**（なぜこう書いたか・どう導入するか）に絞る。
 
 ---
+
 
 ## なぜ init.el だけをリンクするのか
 
@@ -303,10 +87,9 @@ MELPA を追加し、`my/required-packages` の未導入分を起動時に自動
 | `magit` | git クライアント |
 | `diff-hl` | 行左端に変更マーカー（VSCode の gutter 相当） |
 | `treemacs-magit` | treemacs を magit の操作に追随させる |
-| `eat` | 端末エミュレータ（NonGNU ELPA、ビルド不要） |
 | `exec-path-from-shell` | ログインシェルから PATH を取り込む |
 
-NonGNU ELPA は Emacs 30 の既定アーカイブに含まれている（`package-archives` の既定は `("gnu" "nongnu")`）ので、追加設定なしで `eat` が取得できる。明示的に足しているのは MELPA のみ。
+明示的に足しているアーカイブは MELPA のみ。GNU / NonGNU ELPA は Emacs 30 の既定に含まれている（`package-archives` の既定は `("gnu" "nongnu")`）。
 
 インストール失敗時は `condition-case` で握り潰してメッセージだけ出す。1つのパッケージが取れなくても Emacs が起動不能にならないようにするため。
 
@@ -561,29 +344,31 @@ PATH = :/Applications/Emacs.app/Contents/MacOS/bin-arm64-11:...
 (executable-find "claude")   ; nil なら通っていない
 ```
 
-### 10. ターミナル（eat）
+### 10. 読む（PDF / Markdown を並べる）と、やめた内蔵ターミナル
 
-VSCode の統合ターミナル相当。`C-c s` で下部の side window に開く。
+#### eat は撤去した（2026-08-18）
 
-#### eshell / shell では TUI アプリが動かない
+以前は VSCode の統合ターミナル相当として `eat`（純 elisp の端末エミュレータ）を
+`C-c s` で下部 side window に開いていた。**Emacs の再描画モデルと相性が悪く撤去した。**
 
-**これが eat を入れた理由。** `eshell` と `M-x shell` は comint ベースの**行指向**インターフェースで、端末エミュレータではない。カーソル移動や ANSI エスケープを解釈する PTY を持たないため、画面全体を描き換えるアプリ（claude、vim、top、htop 等）は動かない。
+- 行の高さは「その行に出た一番背の高いグリフ」で決まるので、スピナーや和文が
+  流れるたび行高が変わり画面が上下する
+- eat は描画のたび `recenter` で位置合わせをするため揺れが増幅される
+- 既定の semi-char モードは F1-F12 を端末へ渡さない
 
-| 方式 | TUI アプリ | 備考 |
-|---|---|---|
-| `eshell` / `M-x shell` | ✗ | 行指向。git やファイル操作には十分 |
-| `M-x ansi-term` | △ | 端末エミュレーションはあるが遅い |
-| **`eat`** | ○ | **純 elisp、ビルド不要。採用** |
-| vterm | ○ | 最速だが C モジュールのビルドに cmake が必要 |
+フォント側の対処（下の「既定フォント」参照）で行高は 16px に揃えられたが、
+根本は Emacs 側なので追わないことにした。全画面 TUI は Ghostty で動かす。
+経緯: `~/code/tank/ideas/memo/20260818_emacs_eat_tui描画の揺れとキー.md`
 
-なお eshell かどうかは起動時のバナー `Welcome to the Emacs shell`（`eshell-banner-message` の既定値）で判別できる。eat では出ない。
-
-#### side window での表示
+なお `eshell` / `M-x shell` は comint ベースの**行指向**インターフェースで、
+カーソル移動や ANSI エスケープを解釈する PTY を持たない。だから claude・vim・top の
+ような全画面 TUI は最初から動かない（これが当時 eat を入れた理由でもあった）。
+git やちょっとしたコマンドには十分なので、下部 side window に出す設定は残してある。
 
 ```elisp
 (setq display-buffer-alist
       (append display-buffer-alist
-              '(("\\`\\*\\(?:.*-\\)?eat\\*\\(?:<[0-9]+>\\)?\\'\\|\\`\\*e?shell\\*\\'"
+              '(("\\`\\*e?shell\\*\\'"
                  (display-buffer-in-side-window)
                  (side . bottom)          ; 'top / 'left / 'right に変更可
                  (slot . 0)
@@ -592,11 +377,36 @@ VSCode の統合ターミナル相当。`C-c s` で下部の side window に開�
                   (no-delete-other-windows . t))))))
 ```
 
-`no-delete-other-windows` を付けると `C-x 1` でも消えない（VSCode のパネルと同じ挙動）。左は treemacs が使っているので下に出している。
+`no-delete-other-windows` を付けると `C-x 1` でも消えない（VSCode のパネルと同じ挙動）。
 
-正規表現は `*eat*` / `*eat*<2>` / `*tank-eat*`（`eat-project` は `project-prefixed-buffer-name` を使う）/ `*eshell*` / `*shell*` にマッチし、`*scratch*` `*Messages*` には誤爆しないことを確認済み。
+#### PDF は組み込みの doc-view
 
-`C-c s` は VSCode の Ctrl+` と同じ3状態にしてある（閉じている→開いて移動 / 開いている→移動 / フォーカス中→閉じる）。
+外部パッケージは要らない。ページの PNG 化に Ghostscript（`gs`）、テキスト検索に
+`pdftotext`（poppler）を使い、どちらも brew で既に入っている。
+
+```elisp
+(setq doc-view-resolution 200    ; 既定100は Retina でぼやける
+      doc-view-continuous t)     ; ページ末尾で止まらず次ページへ送る
+```
+
+初回に開いたときだけ全ページを PNG 化する（論文24ページで数秒）。
+生成物は `~/.emacs.d/docview/` にキャッシュされる。
+
+`pdf-tools`（poppler を直に叩く別実装）は描画がきれいで注釈も付けられるが、
+`epdfinfo` のビルドに automake が要り、新しい poppler ではビルド失敗の報告がある。
+
+#### 並べて読む
+
+Emacs はドラッグで分割を作れない。分割はコマンドで先に作り、中身は treemacs からの
+ドラッグや Finder からのドロップで入れる。
+
+```elisp
+(setq dnd-open-file-other-window nil)   ; 落とした先のウィンドウで開く
+```
+
+- `my/reading-layout`（`C-c r`）— サイドウィンドウを閉じて左右2ペインにする
+- `my/open-beside`（`C-c o`）— 右隣のウィンドウで開く。無ければ右に作る
+
 
 ### 11. ウィンドウ間の移動
 
@@ -816,7 +626,7 @@ init.el 上の位置は treemacs と「UI の配色」の間。
       tab-line-separator " "
       tab-line-close-tab-function #'kill-buffer)
 
-(dolist (mode '(treemacs-mode eat-mode))
+(dolist (mode '(treemacs-mode))
   (add-to-list 'tab-line-exclude-modes mode))
 
 (global-tab-line-mode 1)
@@ -824,7 +634,7 @@ init.el 上の位置は treemacs と「UI の配色」の間。
 
 `tab-line-close-tab-function` の既定は `bury-buffer` で、**✕ を押してもタブから消えるだけでバッファは残る**。VSCode の ✕ と同じ挙動にするため `kill-buffer` に変えている。
 
-サイドウィンドウ（treemacs / eat）にタブが出ると邪魔なので `tab-line-exclude-modes` に足す。既定は `(completion-list-mode)` のみ。
+サイドウィンドウ（treemacs）にタブが出ると邪魔なので `tab-line-exclude-modes` に足す。既定は `(completion-list-mode)` のみ。
 
 配色は `my/apply-peacock-chrome` 側で `tab-line` / `tab-line-tab` / `tab-line-tab-current` / `tab-line-tab-inactive` / `tab-line-highlight` に指定する。**アクティブなタブだけエディタ本体と同じ `#0D0D0D`** にして地続きに見せ、非アクティブは activityBar と同じ `#1A0A00` に落としている。
 
@@ -887,6 +697,33 @@ GFM は語中の `_` を強調と見なさない仕様で、`gfm-mode` がそれ
 - **カーソル行での記法復帰** — Obsidian は編集中の行だけ `**` が現れるが、markdown-mode は全体一括のトグル（`C-c C-x C-m`）しかない。org には `org-appear` があるが markdown 版は見つからなかった。`**` の境界が見えないまま消す事故が起きたら一時的にトグルで戻す
 
 ---
+
+### 17. タブ操作と macOS の Cmd キー
+
+`Cmd+N` の既定は `make-frame`（OS ウィンドウが増える）、`Cmd+T` の既定は
+`menu-set-font`（フォントパネル）で、macOS アプリの慣習とずれる。
+tab-line のタブは「そのウィンドウが表示したバッファの並び」なので、
+タブを増やす操作＝そのウィンドウで別のバッファを開くことになる。
+
+`my/tile-tabs`（`C-c 3` / `C-c 2`）はタブに並んでいるバッファをウィンドウに割り付ける。
+タブ自体は分割できないので、分割してから各ウィンドウにバッファを入れている。
+
+仕組みとキー一覧は `~/code/tank/library/emacs/windows-and-tabs.md`。
+
+### 18. git 変更ファイル数バッジ
+
+モードラインと treemacs のプロジェクト行に、`git status --porcelain -uall` の
+行数を出す（VSCode の Source Control バッジ相当）。
+
+`-uall` が要るのは、付けないと git が未追跡ディレクトリを1行に畳んでしまい、
+中に10ファイルあっても1と数えるため。
+
+モードライン側はハッシュテーブルのキャッシュを読むだけ、treemacs 側は
+呼ばれるたびに数え直す作りなので、フックが走らないと2つのバッジがずれる。
+Emacs の外でファイルが増減した場合に備えて `after-focus-change-function` でも
+数え直している。
+
+詳細とハマりどころは `~/code/tank/library/emacs/git-change-badge.md`。
 
 ## 変更するときのメモ
 

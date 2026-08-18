@@ -20,7 +20,6 @@
     diff-hl
     magit
     treemacs-magit
-    eat
     exec-path-from-shell
     markdown-mode)
   "この設定が前提とするパッケージ。起動時に未導入なら自動で入れる。")
@@ -72,6 +71,44 @@
   (when (and (display-graphic-p) (find-font (font-spec :name font)))
     (set-face-attribute 'default nil :family font :height 140)))
 
+;; --- 行の高さを 1 行分に揃える（TUI のちらつき対策） -----------------
+;; Emacs は「その行に出た一番背の高いグリフ」に合わせて行の高さを変える。
+;; 既定フォントに無い文字は別フォントへ落ちるので、そこだけ行が高くなり、
+;; スピナーが回るたび・和文が流れるたびに画面全体が上下に跳ねる。
+;; 実測（default-line-height = 16px）:
+;;   漢字 20px（PingFang SC に落ちていた）/ 点字スピナー 18px
+;;   ✻ 19px / ⏺ 20px / 絵文字 23px
+;; 落ち先を指定して、全部 16px に収まるようにする。
+(when (display-graphic-p)
+  (let ((font "HackGen Console NF"))
+    (when (find-font (font-spec :name font))
+      ;; 1) 漢字が中国語フォント（PingFang SC）に落ちるのを止める。
+      ;;    かなは HackGen に当たっていたが漢字は当たっていなかった。
+      ;;    字形が中国語形になる問題も同時に直る。
+      (dolist (target '(han kana cjk-misc symbol
+                        japanese-jisx0208 japanese-jisx0212))
+        (set-fontset-font t target (font-spec :family font) nil 'prepend))
+      ;; 2) 罫線・記号類。HackGen が持つ字はそれを使い、持たない字だけ
+      ;;    サイズを絞った別フォントへ落とす（prepend は後ほど優先）。
+      (dolist (range '((#x2190 . #x21FF)   ; 矢印
+                       (#x2200 . #x22FF)   ; 数学記号
+                       (#x2300 . #x23FF)   ; その他技術記号
+                       (#x2500 . #x257F)   ; 罫線
+                       (#x2580 . #x259F)   ; ブロック
+                       (#x25A0 . #x25FF)   ; 幾何図形
+                       (#x2600 . #x26FF)   ; その他記号
+                       (#x2700 . #x27BF)   ; 装飾記号（✻ ✽ ✓）
+                       (#x2B00 . #x2BFF))) ; 矢印・記号追加
+        (dolist (fam '("STIX Two Math" "Arial Unicode MS" "Menlo"))
+          (set-fontset-font t range (font-spec :family fam :size 11) nil 'prepend))
+        (set-fontset-font t range (font-spec :family font) nil 'prepend))
+      ;; 3) 点字（Claude Code のスピナー ⠋⠙⠹）と絵文字。
+      ;;    Apple Braille は 11pt 以上で 17px になるので 10pt に固定。
+      (set-fontset-font t '(#x2800 . #x28FF)
+                        (font-spec :family "Apple Braille" :size 10) nil 'prepend)
+      (set-fontset-font t 'emoji
+                        (font-spec :family "Apple Color Emoji" :size 8) nil 'prepend))))
+
 ;;; ---------------------------------------------------------------
 ;;; テーマ（エディタ本体の配色）
 ;;; ---------------------------------------------------------------
@@ -122,7 +159,12 @@
       treemacs-indentation 2
       treemacs-show-hidden-files t         ; ドットファイルを表示する
       treemacs-width-is-initially-locked nil ; マウスで幅を変えられるようにする
-      treemacs-follow-after-init t)       ; 開いているファイルの位置にツリーを追随させる
+      treemacs-follow-after-init t       ; 開いているファイルの位置にツリーを追随させる
+      ;; NOTE: ツリー内でノードをドラッグすると treemacs--drag-move-files が走り
+      ;;       rename-file で**実際にファイルが移動する**（既定 t）。
+      ;;       ツリーから編集ウィンドウへのドラッグ（そこで開く）は別経路なので
+      ;;       これを切っても残る。読むために掴む機会が多いので事故を止める。
+      treemacs-move-files-by-mouse-dragging nil)
 
 ;; NOTE: treemacs の既定は幅ロック（t）で、マウスドラッグでは変わらない。
 ;;       解除しても掴む場所には注意が要る。ドラッグの開始点がフリンジだと
@@ -177,8 +219,8 @@
       ;; VSCode の ✕ と同じ「閉じる」にする。
       tab-line-close-tab-function #'kill-buffer)
 
-;; サイドウィンドウ（treemacs / eat）にはタブを出さない
-(dolist (mode '(treemacs-mode eat-mode))
+;; サイドウィンドウ（treemacs）にはタブを出さない
+(dolist (mode '(treemacs-mode))
   (add-to-list 'tab-line-exclude-modes mode))
 
 (global-tab-line-mode 1)
@@ -187,6 +229,79 @@
 (global-set-key (kbd "C-c x")       #'kill-current-buffer)   ; VSCode の Ctrl+W 相当
 (global-set-key (kbd "C-c <tab>")   #'tab-line-switch-to-next-tab)
 (global-set-key (kbd "C-c S-<tab>") #'tab-line-switch-to-prev-tab)
+
+;; --- Cmd+N を「新しいフレーム」から「新しいタブ」へ ----------------
+;; macOS の既定（ns-win.el）では s-n = make-frame で OS ウィンドウが増える。
+;; 見えているタブは tab-line＝「このウィンドウが表示したバッファの並び」なので、
+;; タブを増やす操作は「このウィンドウで別のバッファを開く」ことに等しい。
+;; NOTE: 新しいフレームが要るときは C-x 5 2 (make-frame-command) が残っている。
+;; NOTE: s-t の既定はフォントパネル (menu-set-font) でほぼ使わないので、
+;;       ブラウザ/VSCode と同じ「新しいタブ」に寄せる。
+(defun my/new-tab ()
+  "このウィンドウに新しい空バッファを開く（tab-line のタブが1枚増える）。"
+  (interactive)
+  (switch-to-buffer (generate-new-buffer "untitled")))
+
+(global-set-key (kbd "s-n") #'my/new-tab)
+(global-set-key (kbd "s-t") #'my/new-tab)
+
+;; --- macOS 慣習で抜けている Cmd キーを埋める ----------------------
+;; NS ポートの既定は s-<left> / s-<right> に行頭・行末を入れているのに、
+;; 縦方向（Cmd+↑ = 文書の先頭 / Cmd+↓ = 文書の末尾）が未割当で
+;; 「s-<down> is undefined」になる。Cmd+Delete も同様に空いている。
+(global-set-key (kbd "s-<up>")   #'beginning-of-buffer)
+(global-set-key (kbd "s-<down>") #'end-of-buffer)
+
+(defun my/kill-to-line-beginning ()
+  "行頭までを削除する（macOS の Cmd+Delete 相当）。"
+  (interactive)
+  (kill-line 0))
+
+(global-set-key (kbd "s-<backspace>") #'my/kill-to-line-beginning)
+
+;; Cmd+W は既定が delete-frame だが、フレームが1枚のときは
+;; 「唯一のフレームは消せない」で失敗するだけで役に立たない。
+;; Cmd+N がタブを増やすようにした対なので、タブを閉じる側に寄せる。
+;; NOTE: フレームを閉じるのは C-x 5 0 (delete-frame) が残っている。
+(global-set-key (kbd "s-w") #'kill-current-buffer)
+
+;; --- タブに並んでいるバッファをタイル表示する ----------------------
+;; tab-line のタブ自体は分割できない。タブは「そのウィンドウが表示した
+;; バッファの並び」でしかないため、実際にやるのは
+;; 「ウィンドウを分割して、各ウィンドウにそのバッファを表示する」こと。
+;; 並びは tab-line-tabs-function（既定 tab-line-tabs-fixed-window-buffers）が返す。
+(defun my/tile-tabs (n &optional vertical)
+  "tab-line の左から N 枚のバッファを並べて表示する。
+VERTICAL が非 nil なら上下に、nil なら左右に分割する。"
+  ;; NOTE: tab-line-tabs-function は関数によってバッファではなく
+  ;;       タブの alist を返すものがあるので bufferp で絞る。
+  (let ((buffers (seq-take (seq-filter #'bufferp (funcall tab-line-tabs-function))
+                           (max n 1))))
+    (when (window-with-parameter 'window-side)
+      (window-toggle-side-windows))
+    (delete-other-windows)
+    (set-window-buffer (selected-window) (car buffers))
+    (let ((win (selected-window)))
+      (dolist (b (cdr buffers))
+        (setq win (split-window win nil (if vertical 'below 'right)))
+        (set-window-buffer win b)))
+    (balance-windows)))
+
+;; NOTE: interactive "p" は前置引数なしだと 1 を返すので既定が「1枚」に
+;;       なってしまう。"P" で受けて、無指定のときだけ 2 に倒す。
+(defun my/tile-tabs-right (n)
+  "左から N 枚のタブを左右に並べる。無指定は2枚、C-u 3 で3枚。"
+  (interactive "P")
+  (my/tile-tabs (if n (prefix-numeric-value n) 2) nil))
+
+(defun my/tile-tabs-below (n)
+  "左から N 枚のタブを上下に並べる。無指定は2枚、C-u 3 で3枚。"
+  (interactive "P")
+  (my/tile-tabs (if n (prefix-numeric-value n) 2) t))
+
+;; C-x 3 / C-x 2（左右 / 上下）に合わせた並び
+(global-set-key (kbd "C-c 3") #'my/tile-tabs-right)
+(global-set-key (kbd "C-c 2") #'my/tile-tabs-below)
 
 ;;; ---------------------------------------------------------------
 ;;; UI の配色（VSCode Peacock 相当: 外枠だけを塗る）
@@ -326,33 +441,25 @@
   (exec-path-from-shell-initialize))
 
 ;;; ---------------------------------------------------------------
-;;; ターミナル（VSCode の統合ターミナル相当）
+;;; シェル（下部サイドウィンドウ）
 ;;; ---------------------------------------------------------------
-;; eat = 純 elisp の端末エミュレータ（NonGNU ELPA、ビルド不要）。
+;; Emacs 内で全画面 TUI（claude・vim・top 等）を動かすのはやめた。
+;; eat（純 elisp 端末）を試したが、Emacs の再描画モデルと相性が悪い。
+;;   - 行の高さは「その行に出た一番背の高いグリフ」で決まるので、
+;;     スピナーや和文が流れるたび行高が変わり画面が上下する
+;;   - eat は描画のたび `recenter' で位置合わせするため揺れが増幅される
+;;   - 既定の semi-char モードは F1-F12 を端末へ渡さない
+;; フォント側の対処で行高は 16px に揃えられたが、根本は Emacs 側の
+;; モデルなので追い続けないことにした。TUI は Ghostty で動かす。
+;; 経緯: ideas/memo/20260818_emacs_eat_tui描画の揺れとキー.md（tank リポジトリ）
 ;;
-;; NOTE: eshell / M-x shell では claude・vim・top のような全画面 TUI は動かない。
-;;       これらは comint ベースの「行指向」インターフェースで、
-;;       カーソル移動やANSIエスケープを解釈する PTY を持たないため。
-;;       eat はそれを持つので TUI アプリが動く。
-;;
-;; 表示は Emacs 標準の side window。左は treemacs が使っているので下に出す。
-;; side を 'right や 'top に変えれば位置は動かせる。
-
-(require 'eat)
-
-;; 描画のちらつき対策。
-;; eat は「チャンクを受け取ったら少し待ち、その間に次が来たら再描画を先送りする」
-;; 方式でちらつきを抑えている。既定は min 0.008 / max 0.033 秒（約30fps）で、
-;; Claude Code のような全画面を毎回描き直す TUI では中途半端な状態が
-;; 何度も描画されて上下に揺れて見える。待ち時間を延ばしてまとめて描く。
-;;   小さくする -> 反応は速いがちらつく / 大きくする -> 滑らかだが表示が遅れる
-(setq eat-minimum-latency 0.03
-      eat-maximum-latency 0.10)
+;; eshell / M-x shell は行指向なので TUI は動かないが、
+;; ちょっとしたコマンドには使うので下部サイドウィンドウに出す設定は残す。
 
 (setq display-buffer-alist
       (append display-buffer-alist
-              ;; *eat* / *eat*<2> / *tank-eat*（eat-project）/ *eshell* / *shell*
-              '(("\\`\\*\\(?:.*-\\)?eat\\*\\(?:<[0-9]+>\\)?\\'\\|\\`\\*e?shell\\*\\'"
+              ;; *eshell* / *shell*
+              '(("\\`\\*e?shell\\*\\'"
                  (display-buffer-in-side-window)
                  (side . bottom)
                  (slot . 0)
@@ -360,21 +467,6 @@
                  (window-parameters
                   ;; C-x 1（他のウィンドウを全部閉じる）でも消えないようにする
                   (no-delete-other-windows . t))))))
-
-(defun my/toggle-terminal ()
-  "下部のサイドウィンドウで eat を開閉する。
-VSCode の Ctrl+` と同じ挙動にする:
-  閉じている  -> 開いてフォーカスを移す
-  開いている  -> フォーカスを移す
-  フォーカス中 -> 閉じる"
-  (interactive)
-  (let ((win (get-buffer-window eat-buffer-name)))
-    (cond
-     ((and win (eq win (selected-window))) (delete-window win))
-     (win (select-window win))
-     (t (eat)))))
-
-(global-set-key (kbd "C-c s") #'my/toggle-terminal)
 ;; サイドウィンドウ（treemacs 含む）を一括で開閉する標準コマンド
 (global-set-key (kbd "C-c w") #'window-toggle-side-windows)
 
@@ -440,7 +532,7 @@ NOTE: vc-root-dir は使えない。あれは「そのファイル自身が追�
       前提にしており、新規作成した未追跡ファイルを開くと nil を返す
       （リポジトリ内にいるのにバッジが消える）。
       .git を上に辿る方式なら追跡状態に依存せず、
-      *eat* や dired のような非ファイルバッファでも効く。"
+      *eshell* や dired のような非ファイルバッファでも効く。"
   (when-let* ((dir (locate-dominating-file default-directory ".git")))
     (expand-file-name dir)))
 
@@ -502,8 +594,25 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
   (my/treemacs-update-git-badges))
 
 (add-hook 'after-save-hook         #'my/git-change-count-update-all)
-(add-hook 'find-file-hook          #'my/git-change-count-update)
+(add-hook 'find-file-hook          #'my/git-change-count-update-all)
 (add-hook 'magit-post-refresh-hook #'my/git-change-count-update-all)
+
+;; NOTE: 上のフックは「Emacs の中で起きたこと」しか拾えない。
+;;       ターミナルや別のエディタでファイルを増減させると、モードラインの
+;;       バッジ（キャッシュを読むだけ）が古い値のまま残る。
+;;       treemacs 側は呼ばれるたびに数え直すので、同じ Emacs の中で
+;;       2 つのバッジが違う数字を出すことになる。
+;;       Emacs にフォーカスが戻ったときに数え直して合わせる（VSCode と同じ挙動）。
+(defun my/git-change-count-on-focus ()
+  "Emacs にフォーカスが戻ったときだけバッジを数え直す。"
+  (when (frame-focus-state)
+    (my/git-change-count-update-all)))
+
+(add-function :after after-focus-change-function
+              #'my/git-change-count-on-focus)
+
+;; 手で数え直したいとき用。
+(defalias 'my/git-badge-refresh #'my/git-change-count-update-all)
 
 ;; treemacs 側の反映タイミング。
 ;; NOTE: treemacs-mode-hook は使えない。メジャーモード設定時＝ツリー描画前に走るため、
@@ -607,6 +716,58 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
 ;;   C-c C-d      文脈依存。チェックボックス切替・参照/脚注ジャンプ・表の整形
 ;;   C-c C-o      リンク・wikilink を開く
 ;;   C-c C-c c    未定義の参照リンクを検出
+
+;;; ---------------------------------------------------------------
+;;; 読む（PDF / Markdown を並べる）
+;;; ---------------------------------------------------------------
+;; PDF は組み込みの doc-view-mode で開く。外部パッケージは要らない。
+;; 中で使うのは Ghostscript（ページを PNG 化）と pdftotext（テキスト検索）で、
+;; どちらも brew の gs / poppler として既に入っている。
+;;
+;; NOTE: pdf-tools（poppler を直に叩く別実装）は描画がきれいで注釈も付けられるが、
+;;       epdfinfo のビルドに automake が要り、新しい poppler ではビルドが
+;;       失敗する報告がある。まず doc-view で足りるか見る。
+;;
+;; 初回に開いたときだけ全ページを PNG 化するので待つ（論文24ページで数秒）。
+;; 生成物は ~/.emacs.d/docview/ にキャッシュされ、2回目以降は即座に出る。
+
+(setq doc-view-resolution 200    ; 既定100は Retina でぼやける
+      doc-view-continuous t)     ; ページ末尾で止まらず次ページへ送る
+
+;; 主なキー（doc-view-mode 標準）
+;;   n / p        次ページ / 前ページ
+;;   SPC / DEL    スクロール（連続なのでページも跨ぐ）
+;;   C-s          テキスト検索（pdftotext の結果に対して）
+;;   + / -        拡大 / 縮小
+;;   C-c C-t      テキストだけ抜き出したバッファに切り替え
+;;   W / P        ウィンドウ幅 / ページ全体に合わせる
+
+;; --- 並べて読む -------------------------------------------------
+;; NOTE: Emacs はドラッグで分割を作れない。分割はコマンドで先に作り、
+;;       中身は treemacs からのドラッグや Finder からのドロップで入れる。
+;;       ドロップはポインタの下のウィンドウで開く（dnd-open-file-other-window）。
+
+(setq dnd-open-file-other-window nil)   ; 落とした先のウィンドウで開く
+
+(defun my/reading-layout ()
+  "読む用の2ペインにする。サイドウィンドウを閉じて左右に分ける。"
+  (interactive)
+  (when (window-with-parameter 'window-side)
+    (window-toggle-side-windows))
+  (delete-other-windows)
+  (split-window-right)
+  (balance-windows))
+
+(defun my/open-beside (file)
+  "FILE を右隣のウィンドウで開く。無ければ右に作ってから開く。"
+  (interactive "f並べて開くファイル: ")
+  (let ((win (or (window-in-direction 'right)
+                 (split-window-right))))
+    (select-window win)
+    (find-file file)))
+
+(global-set-key (kbd "C-c r") #'my/reading-layout)
+(global-set-key (kbd "C-c o") #'my/open-beside)
 
 ;;; ---------------------------------------------------------------
 ;;; macOS のタイトルバー
