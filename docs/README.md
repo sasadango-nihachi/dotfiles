@@ -26,7 +26,7 @@
 | [vim/vimrc_config.md](vim/vimrc_config.md) | `.vimrc` |
 | [wezterm/wezterm_config.md](wezterm/wezterm_config.md) | `.wezterm.lua` |
 | [tmux/tmux_config.md](tmux/tmux_config.md) | `.tmux.conf` |
-| [git_gh/git_config.md](git_gh/git_config.md) | `.gitconfig` / `.gitignore_global` |
+| [git/git_config.md](git/git_config.md) | `.gitconfig` / `.gitignore_global` |
 | [jrnl/jrnl_config.md](jrnl/jrnl_config.md) | `.config/jrnl/jrnl.yaml` |
 | [hyper/hyper_config.md](hyper/hyper_config.md) | `.hyper.js`（WezTerm へ移行済み） |
 | [windows/windows_env.md](windows/windows_env.md) | Windows 環境の構築手順（`windows_env/`） |
