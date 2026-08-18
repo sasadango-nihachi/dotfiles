@@ -143,7 +143,7 @@ call plug#end()
 set termguicolors
 set background=dark
 
-"colorscheme iceberg
+colorscheme iceberg
 "colorscheme night-owl
 "colorscheme palenight
-colorscheme catppuccin_mocha
+"colorscheme catppuccin_mocha
