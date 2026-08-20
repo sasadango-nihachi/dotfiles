@@ -770,6 +770,104 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
 (global-set-key (kbd "C-c o") #'my/open-beside)
 
 ;;; ---------------------------------------------------------------
+;;; 勉強のセッション（素材とノートを並べる）
+;;; ---------------------------------------------------------------
+;; 素材（shelf/ のテキスト化 md、tmp_papers/ の PDF）を左に、
+;; その素材のノートを右に開くところまでを 1 コマンドにする。
+;;
+;; NOTE: ノートの置き場は ideas/memo/ にした。読んでいる最中のメモは
+;;       tank の分類でいう「調べた内容」であって、まだ体系化された知識ではない。
+;;       体系立てて残す段になったら library/study/<テーマ>/ へ手で移す。
+;; NOTE: ノートは素材ごとに 1 枚。日をまたいでも既存のノートを探して開き直すので、
+;;       同じ本のメモが日付ごとに散らばらない。
+
+(defvar my/tank-directory (expand-file-name "~/code/tank/")
+  "素材とノートを探す起点。")
+
+(defvar my/study-note-directory (expand-file-name "ideas/memo/" my/tank-directory)
+  "勉強ノートの置き場。")
+
+(defvar my/study-source-directories
+  '("shelf/books/" "shelf/papers/" "shelf/slides/" "tmp_papers/" "library/study/")
+  "素材を探しに行くディレクトリ（`my/tank-directory' からの相対）。")
+
+(defun my/study--sources ()
+  "素材の候補を集める。表示はリポジトリからの相対パス。"
+  ;; NOTE: code-reading の repo/（クローン本体）や converted/ に降りると
+  ;;       候補が数千件になるので、その名前のディレクトリだけ避ける。
+  (let (files)
+    (dolist (dir my/study-source-directories)
+      (let ((full (expand-file-name dir my/tank-directory)))
+        (when (file-directory-p full)
+          (setq files
+                (nconc files
+                       (directory-files-recursively
+                        full "\\.\\(md\\|pdf\\)\\'" nil
+                        (lambda (d)
+                          (not (member (file-name-nondirectory d)
+                                       '("repo" "converted"))))))))))
+    (sort (mapcar (lambda (f) (file-relative-name f my/tank-directory)) files)
+          #'string<)))
+
+(defun my/study--title (source slug)
+  "ノートの見出しに使う名前。SOURCE が md なら先頭の H1、無ければ SLUG。"
+  (let ((file (expand-file-name source my/tank-directory)))
+    (or (and (string-suffix-p ".md" source)
+             (file-readable-p file)
+             (with-temp-buffer
+               ;; NOTE: 先頭だけ見れば足りる。大きい md を丸ごと読まない。
+               (insert-file-contents file nil 0 4000)
+               (goto-char (point-min))
+               (when (re-search-forward "^# +\\(.+\\)$" nil t)
+                 ;; NOTE: 論文の md は見出しが "# **TITLE**" のように
+                 ;;       強調記法付きのことがあるので落とす。
+                 (string-trim (replace-regexp-in-string
+                               "[*_`]" "" (match-string 1))))))
+        slug)))
+
+(defun my/study--note-buffer (source)
+  "SOURCE（相対パス）に対応するノートのバッファを返す。無ければ作る。"
+  (let* ((slug (file-name-base source))
+         (existing (car (sort (directory-files-recursively
+                               my/study-note-directory
+                               (concat "\\`[0-9]\\{8\\}_study_"
+                                       (regexp-quote slug) "\\.md\\'"))
+                              #'string>)))
+         (file (or existing
+                   (expand-file-name
+                    (format "%s_study_%s.md" (format-time-string "%Y%m%d") slug)
+                    my/study-note-directory))))
+    (with-current-buffer (find-file-noselect file)
+      (when (zerop (buffer-size))
+        (insert (format "# %s\n\n- 素材: `%s`\n- 開始: %s\n\n## メモ\n\n"
+                        (my/study--title source slug)
+                        source (format-time-string "%Y-%m-%d"))))
+      (current-buffer))))
+
+(defun my/study (source &optional pair)
+  "SOURCE を左に、そのノートを右に開く。
+前置引数を付けると右をさらに上下に割り、右上にもう一つの素材 PAIR を置く
+（原文 PDF / テキスト化した md を突き合わせながら読む用）。
+最後にノートのウィンドウへ入るので、そのまま書き始められる。"
+  (interactive
+   (list (completing-read "素材: " (my/study--sources) nil t)
+         (when current-prefix-arg
+           (completing-read "2つ目の素材: " (my/study--sources) nil t))))
+  (let ((note (my/study--note-buffer source)))
+    (when (window-with-parameter 'window-side)
+      (window-toggle-side-windows))
+    (delete-other-windows)
+    (find-file (expand-file-name source my/tank-directory))
+    (select-window (split-window-right))
+    (when pair
+      (find-file (expand-file-name pair my/tank-directory))
+      (select-window (split-window-below)))
+    (switch-to-buffer note)
+    (balance-windows)))
+
+(global-set-key (kbd "C-c s") #'my/study)
+
+;;; ---------------------------------------------------------------
 ;;; macOS のタイトルバー
 ;;; ---------------------------------------------------------------
 ;; macOS のタイトルバーは任意色にできないため、透過させてフレームと一体化させる
