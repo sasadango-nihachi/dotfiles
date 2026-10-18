@@ -429,42 +429,6 @@ Emacs はドラッグで分割を作れない。分割はコマンドで先に�
 - `my/reading-layout`（`C-c r`）— サイドウィンドウを閉じて左右2ペインにする
 - `my/open-beside`（`C-c o`）— 右隣のウィンドウで開く。無ければ右に作る
 
-#### 素材を並べて開く（`my/study` / `C-c s`）
-
-読みたいファイルを複数選んで分割に並べる。3つの `defvar` で経路が決まる。
-
-```elisp
-(defvar my/tank-directory (expand-file-name "~/code/tank/"))
-(defvar my/study-note-directory (expand-file-name "ideas/memo/" my/tank-directory))
-(defvar my/study-source-directories
-  '("shelf/books/" "shelf/papers/" "shelf/slides/" "tmp_papers/" "library/study/"))
-```
-
-- `my/study--sources` — 上のディレクトリから md / PDF を `directory-files-recursively` で集める。
-  第4引数の述語で `repo`（code-reading のクローン本体）と `converted` に降りないようにしている。
-  これを外すと候補が数千件になる
-- `my/study--read-sources` — `completing-read` を空入力まで繰り返す。REQUIRE-MATCH を nil に
-  してあるので候補外のパスも打てる
-- `my/study` — サイドウィンドウを畳んで `delete-other-windows` → 1枚目を開く →
-  2枚目以降は `split-window` して開く（前置引数で `below`、既定は `right`）→
-  `balance-windows` → `frame-first-window` に戻る
-
-#### ノート（`my/study-note`、呼んだときだけ）
-
-**並べる操作ではノートを作らない。** 開くたびにメモが増えるのを避けるため、明示的に呼んだときだけ作る。
-キーは割り当てていない（`M-x my/study-note`）。
-
-- `my/study--title` — ノートの見出し。素材が md なら先頭 4000 バイトだけ読んで H1 を拾い、
-  `*` `_` `` ` `` を落とす（論文の md は `# **TITLE**` の形が多い）
-- `my/study--note-buffer` — `*_study_<素材名>.md` を memo 配下から探し、あればそれ、
-  無ければ `YYYYMMDD_study_<素材名>.md` を新規に作って雛形を入れる。**素材ごとに1枚**にしたいので
-  日付は新規作成時にしか効かない
-- `my/study-note` — 今のバッファのファイルからノートを引き、右隣のウィンドウ
-  （無ければ `split-window-right`）に出して末尾へ飛ぶ
-
-ノートの置き場を `ideas/memo/` にした理由は tank 側（`library/emacs/keybindings.md`）に書いた。
-
-
 ### 11. ウィンドウ間の移動
 
 ```elisp
