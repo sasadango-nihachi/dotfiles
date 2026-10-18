@@ -43,6 +43,7 @@ CONFIG_DIRS=(
     "nvim"
     "nvim-bare"
     "jrnl"
+    "raycast-scripts"
     # "starship.toml"
 )
 # ↑ ~/.config 以下に配置する設定ファイル/ディレクトリ
