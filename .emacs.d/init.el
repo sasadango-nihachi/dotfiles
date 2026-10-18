@@ -749,6 +749,104 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
 
 (setq dnd-open-file-other-window nil)   ; 落とした先のウィンドウで開く
 
+;; --- ドロップした場所で分割する -----------------------------------
+;; Emacs 標準のドロップは「ポインタの下のウィンドウで開く」だけで、
+;; VSCode のように端に落として分割を作ることはできない。
+;; macOS では drag-n-drop イベントを ns-drag-n-drop が処理しているので、
+;; そこに入る前に落とした位置を見て、端なら先に分割してから開く。
+;;
+;; NOTE: treemacs からのドラッグは drag-n-drop イベントではなく
+;;       treemacs 自身の [drag-mouse-1] なので、これは効かない（従来どおり
+;;       落とした先のウィンドウで開く）。効くのは Finder など外からのドロップ。
+
+(defvar my/dnd-split-edge 0.2
+  "ドロップでウィンドウを分割する端の幅（ウィンドウに対する割合）。
+0 にすると分割せず、常に落とした先のウィンドウで開く。")
+
+(defun my/dnd--split-side (x y w h)
+  "ドロップ位置 X Y が幅 W 高さ H のウィンドウのどの端かを返す。
+戻り値は `split-window' の SIDE 引数。中央なら nil。"
+  (when (and (> my/dnd-split-edge 0) (> w 0) (> h 0))
+    (let* ((rx (/ (float x) w))
+           (ry (/ (float y) h))
+           (e my/dnd-split-edge)
+           ;; 端への食い込みの深さ。中央側なら nil。
+           (dx (cond ((< rx e) (- e rx))
+                     ((> rx (- 1 e)) (- rx (- 1 e)))))
+           (dy (cond ((< ry e) (- e ry))
+                     ((> ry (- 1 e)) (- ry (- 1 e))))))
+      ;; NOTE: 角に落ちたときは、食い込みが深い方の軸を採る。
+      (cond ((and dx dy) (if (>= dx dy)
+                             (if (< rx 0.5) 'left 'right)
+                           (if (< ry 0.5) 'above 'below)))
+            (dx (if (< rx 0.5) 'left 'right))
+            (dy (if (< ry 0.5) 'above 'below))))))
+
+(defun my/drag-n-drop (event)
+  "ファイルのドロップ。ウィンドウの端に落とすとその向きに分割して開く。
+中央に落としたときと、分割できない場所（treemacs 等のサイドウィンドウ、
+ミニバッファ）では標準の `ns-drag-n-drop' に渡す。"
+  (interactive "e")
+  (let* ((start (event-start event))
+         (window (posn-window start))
+         (arg (nth 2 event))
+         (operations (car-safe (cdr-safe arg)))
+         (side (and (windowp window)
+                    (eq (car-safe arg) 'file)
+                    (or (memq 'ns-drag-operation-generic operations)
+                        (memq 'ns-drag-operation-copy operations))
+                    (not (window-parameter window 'window-side))
+                    (not (window-minibuffer-p window))
+                    (let ((xy (posn-x-y start)))
+                      (my/dnd--split-side (car xy) (cdr xy)
+                                          (window-body-width window t)
+                                          (window-body-height window t))))))
+    (if (null side)
+        (ns-drag-n-drop event)
+      (select-window (split-window window nil side))
+      (dolist (file (cdr (cdr arg)))
+        (find-file file))
+      (balance-windows))))
+
+;; NOTE: window-system で判定するとバッチ起動時に nil になり束縛されない。
+;;       フォールバック先の有無で見るのが確実。
+(when (fboundp 'ns-drag-n-drop)
+  (global-set-key [drag-n-drop] #'my/drag-n-drop))
+
+;; treemacs からのドラッグも同じ扱いにする。
+;; NOTE: こちらは drag-n-drop ではなく treemacs-mode-map の [drag-mouse-1]。
+;;       端でなければ treemacs 本来の動作（落とした先のウィンドウで開く／
+;;       ツリー内ならファイル移動）にそのまま渡す。
+(defun my/treemacs-drag (event)
+  "treemacs からのドラッグ。落とした先の端なら分割してからそこに開く。"
+  (interactive "e")
+  (let* ((from (elt (cdr event) 0))
+         (to   (elt (cdr event) 1))
+         (target (posn-window to))
+         (side (and (windowp target)
+                    (not (eq target (posn-window from)))
+                    (not (window-parameter target 'window-side))
+                    (not (window-minibuffer-p target))
+                    (let ((xy (posn-x-y to)))
+                      (my/dnd--split-side (car xy) (cdr xy)
+                                          (window-body-width target t)
+                                          (window-body-height target t)))))
+         (path (when side
+                 (let ((buf (treemacs-get-local-buffer)))
+                   (when (buffer-live-p buf)
+                     (with-current-buffer buf
+                       (-some-> (treemacs-node-at-point)
+                                (treemacs-button-get :path))))))))
+    (if (and side (stringp path) (file-regular-p path))
+        (progn
+          (select-window (split-window target nil side))
+          (find-file path)
+          (balance-windows))
+      (treemacs-dragleftclick-action event))))
+
+(with-eval-after-load 'treemacs
+  (define-key treemacs-mode-map [drag-mouse-1] #'my/treemacs-drag))
+
 (defun my/reading-layout ()
   "読む用の2ペインにする。サイドウィンドウを閉じて左右に分ける。"
   (interactive)
@@ -770,22 +868,19 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
 (global-set-key (kbd "C-c o") #'my/open-beside)
 
 ;;; ---------------------------------------------------------------
-;;; 勉強のセッション（素材とノートを並べる）
+;;; 素材を並べて開く（勉強のセッション）
 ;;; ---------------------------------------------------------------
-;; 素材（shelf/ のテキスト化 md、tmp_papers/ の PDF）を左に、
-;; その素材のノートを右に開くところまでを 1 コマンドにする。
+;; 読みたいファイル（shelf/ のテキスト化 md、tmp_papers/ の PDF など）を
+;; 複数選んで、分割したウィンドウに並べる。
 ;;
-;; NOTE: ノートの置き場は ideas/memo/ にした。読んでいる最中のメモは
-;;       tank の分類でいう「調べた内容」であって、まだ体系化された知識ではない。
-;;       体系立てて残す段になったら library/study/<テーマ>/ へ手で移す。
-;; NOTE: ノートは素材ごとに 1 枚。日をまたいでも既存のノートを探して開き直すので、
-;;       同じ本のメモが日付ごとに散らばらない。
+;; NOTE: ノートは自動で作らない。書きたくなったときだけ M-x my/study-note を呼ぶ。
+;;       開くたびにメモが増えるのは邪魔なので、並べる操作とは分けてある。
 
 (defvar my/tank-directory (expand-file-name "~/code/tank/")
   "素材とノートを探す起点。")
 
 (defvar my/study-note-directory (expand-file-name "ideas/memo/" my/tank-directory)
-  "勉強ノートの置き場。")
+  "勉強ノートの置き場（`my/study-note' で使う）。")
 
 (defvar my/study-source-directories
   '("shelf/books/" "shelf/papers/" "shelf/slides/" "tmp_papers/" "library/study/")
@@ -808,6 +903,45 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
                                        '("repo" "converted"))))))))))
     (sort (mapcar (lambda (f) (file-relative-name f my/tank-directory)) files)
           #'string<)))
+
+(defun my/study--read-sources ()
+  "素材を順に読む。空入力で確定。候補に無いパスも受け付ける。"
+  ;; NOTE: completing-read の REQUIRE-MATCH を nil にしてあるので、
+  ;;       候補（shelf/ 等）以外のパスを打っても通る。空入力で終わり。
+  (let ((sources '()) (n 1) (done nil))
+    (while (not done)
+      (let ((x (completing-read (format "素材 %d（空入力で確定）: " n)
+                                (my/study--sources) nil nil)))
+        (if (string-empty-p x)
+            (setq done t)
+          (push x sources)
+          (setq n (1+ n)))))
+    (nreverse sources)))
+
+(defun my/study (sources &optional vertical)
+  "SOURCES を分割したウィンドウに並べて開く。
+既存の分割は畳んでから作り直す。前置引数を付けると上下に、無ければ左右に並べる。
+カーソルは最初の素材のウィンドウに残る。"
+  (interactive (list (my/study--read-sources) current-prefix-arg))
+  (when sources
+    (when (window-with-parameter 'window-side)
+      (window-toggle-side-windows))
+    (delete-other-windows)
+    (find-file (expand-file-name (car sources) my/tank-directory))
+    (dolist (f (cdr sources))
+      (select-window (split-window nil nil (if vertical 'below 'right)))
+      (find-file (expand-file-name f my/tank-directory)))
+    (balance-windows)
+    (select-window (frame-first-window))))
+
+(global-set-key (kbd "C-c s") #'my/study)
+
+;; --- ノート（呼んだときだけ作る）---------------------------------
+;; NOTE: 置き場は ideas/memo/。読んでいる最中のメモは tank の分類でいう
+;;       「調べた内容」であって、まだ体系化された知識ではない。
+;;       体系立てて残す段になったら library/study/<テーマ>/ へ手で移す。
+;; NOTE: ノートは素材ごとに 1 枚。日をまたいでも既存のノートを探して開き直すので、
+;;       同じ本のメモが日付ごとに散らばらない。
 
 (defun my/study--title (source slug)
   "ノートの見出しに使う名前。SOURCE が md なら先頭の H1、無ければ SLUG。"
@@ -844,28 +978,17 @@ NOTE: -uall は必須。付けないと git は未追跡ディレクトリを
                         source (format-time-string "%Y-%m-%d"))))
       (current-buffer))))
 
-(defun my/study (source &optional pair)
-  "SOURCE を左に、そのノートを右に開く。
-前置引数を付けると右をさらに上下に割り、右上にもう一つの素材 PAIR を置く
-（原文 PDF / テキスト化した md を突き合わせながら読む用）。
-最後にノートのウィンドウへ入るので、そのまま書き始められる。"
-  (interactive
-   (list (completing-read "素材: " (my/study--sources) nil t)
-         (when current-prefix-arg
-           (completing-read "2つ目の素材: " (my/study--sources) nil t))))
-  (let ((note (my/study--note-buffer source)))
-    (when (window-with-parameter 'window-side)
-      (window-toggle-side-windows))
-    (delete-other-windows)
-    (find-file (expand-file-name source my/tank-directory))
-    (select-window (split-window-right))
-    (when pair
-      (find-file (expand-file-name pair my/tank-directory))
-      (select-window (split-window-below)))
-    (switch-to-buffer note)
-    (balance-windows)))
-
-(global-set-key (kbd "C-c s") #'my/study)
+(defun my/study-note ()
+  "今のウィンドウで開いている素材のノートを、右隣のウィンドウに開く。
+右にウィンドウが無ければ作る。ノートが無ければ雛形を入れて新規に作る。"
+  (interactive)
+  (let ((file (buffer-file-name)))
+    (unless file
+      (user-error "このバッファはファイルを開いていません"))
+    (let ((note (my/study--note-buffer (file-relative-name file my/tank-directory))))
+      (select-window (or (window-in-direction 'right) (split-window-right)))
+      (switch-to-buffer note)
+      (goto-char (point-max)))))
 
 ;;; ---------------------------------------------------------------
 ;;; macOS のタイトルバー

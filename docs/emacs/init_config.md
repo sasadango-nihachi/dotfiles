@@ -404,12 +404,34 @@ Emacs はドラッグで分割を作れない。分割はコマンドで先に�
 (setq dnd-open-file-other-window nil)   ; 落とした先のウィンドウで開く
 ```
 
+##### ドロップした場所で分割する
+
+標準のドロップは「ポインタの下のウィンドウで開く」だけなので、落とした位置を見て
+端なら先に分割する処理を挟んでいる。判定は `my/dnd--split-side` に切り出してあり、
+入口が2つある。
+
+| 入口 | イベント | どこで拾うか |
+|---|---|---|
+| Finder など外から | `[drag-n-drop]` | `my/drag-n-drop`（`global-map`、`ns-drag-n-drop` を置き換え） |
+| treemacs から | `[drag-mouse-1]` | `my/treemacs-drag`（`treemacs-mode-map`） |
+
+- `my/dnd--split-side` — 位置の比率が `my/dnd-split-edge`（既定 0.2）より端なら
+  `left` / `right` / `above` / `below` を返す。中央は nil。角は食い込みの深い軸を採る。
+  `my/dnd-split-edge` を 0 にすると常に nil になり従来の挙動に戻る
+- 分割しない場合は元の関数（`ns-drag-n-drop` / `treemacs-dragleftclick-action`）へそのまま渡す。
+  サイドウィンドウ・ミニバッファの上でも渡す（分割できないため）
+- NOTE: 束縛の条件を `window-system` で書くとバッチ起動時に nil になって束縛されない。
+  `(fboundp 'ns-drag-n-drop)` で見ている
+- NOTE: `my/drag-n-drop` はイベントの `(nth 2 event)` から `(type operations . objects)` を取る。
+  ドラッグ中の移動通知はここが `lambda` になるので `(eq (car-safe arg) 'file)` で弾かれ、
+  元の関数に流れる
+
 - `my/reading-layout`（`C-c r`）— サイドウィンドウを閉じて左右2ペインにする
 - `my/open-beside`（`C-c o`）— 右隣のウィンドウで開く。無ければ右に作る
 
-#### 勉強のセッション（`my/study` / `C-c s`）
+#### 素材を並べて開く（`my/study` / `C-c s`）
 
-素材とノートを並べるところまでを1コマンドにしたもの。3つの `defvar` で経路が決まる。
+読みたいファイルを複数選んで分割に並べる。3つの `defvar` で経路が決まる。
 
 ```elisp
 (defvar my/tank-directory (expand-file-name "~/code/tank/"))
@@ -421,14 +443,24 @@ Emacs はドラッグで分割を作れない。分割はコマンドで先に�
 - `my/study--sources` — 上のディレクトリから md / PDF を `directory-files-recursively` で集める。
   第4引数の述語で `repo`（code-reading のクローン本体）と `converted` に降りないようにしている。
   これを外すと候補が数千件になる
+- `my/study--read-sources` — `completing-read` を空入力まで繰り返す。REQUIRE-MATCH を nil に
+  してあるので候補外のパスも打てる
+- `my/study` — サイドウィンドウを畳んで `delete-other-windows` → 1枚目を開く →
+  2枚目以降は `split-window` して開く（前置引数で `below`、既定は `right`）→
+  `balance-windows` → `frame-first-window` に戻る
+
+#### ノート（`my/study-note`、呼んだときだけ）
+
+**並べる操作ではノートを作らない。** 開くたびにメモが増えるのを避けるため、明示的に呼んだときだけ作る。
+キーは割り当てていない（`M-x my/study-note`）。
+
 - `my/study--title` — ノートの見出し。素材が md なら先頭 4000 バイトだけ読んで H1 を拾い、
   `*` `_` `` ` `` を落とす（論文の md は `# **TITLE**` の形が多い）
 - `my/study--note-buffer` — `*_study_<素材名>.md` を memo 配下から探し、あればそれ、
   無ければ `YYYYMMDD_study_<素材名>.md` を新規に作って雛形を入れる。**素材ごとに1枚**にしたいので
   日付は新規作成時にしか効かない
-- `my/study` — サイドウィンドウを畳んで `delete-other-windows` → 左に素材 →
-  `split-window-right` → 前置引数があれば2つ目の素材を置いてさらに `split-window-below` →
-  ノート。最後にノートのウィンドウが選択された状態で終わる
+- `my/study-note` — 今のバッファのファイルからノートを引き、右隣のウィンドウ
+  （無ければ `split-window-right`）に出して末尾へ飛ぶ
 
 ノートの置き場を `ideas/memo/` にした理由は tank 側（`library/emacs/keybindings.md`）に書いた。
 
