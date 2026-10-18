@@ -3,6 +3,10 @@
 
 local opt = vim.opt
 
+-- snacks.nvim のアニメーション（スムーズスクロール等）を全停止。
+-- LazyVim 標準で有効だが、スクロールが意図的に遅延して見えるため切る
+vim.g.snacks_animate = false
+
 -- Python を主に書くので 4 spaces を明示
 opt.tabstop = 4
 opt.shiftwidth = 4

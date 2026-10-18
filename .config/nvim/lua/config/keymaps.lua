@@ -71,3 +71,127 @@ vim.api.nvim_create_user_command("TutorJa", function(opts)
     vim.fn["tutor#EnableInteractive"](true)
     vim.fn["tutor#ApplyTransform"]()
 end, { nargs = "?", desc = "日本語版 Tutor を開く（引数で章番号、例: :TutorJa 2）" })
+
+-- ■ 開いているファイルをブラウザで見る（<leader>ch）
+--
+-- ファイル種別で動作が変わる:
+--   markdown  … 単体 HTML にして .tmp/ に出してから開く
+--   html/svg  … そのまま開く（生成物の確認用）
+--
+-- markdown-preview（<leader>cp、LazyVim が markdown に割り当てている）との使い分け:
+--   <leader>cp … サーバを立ててブラウザが接続。編集にスクロール追従する。閉じたら消える
+--   <leader>ch … ファイルとして .tmp/ に残る。後で開ける・人に渡せる。サーバ不要
+--
+-- 中身は tank の scripts/md_to_html/run.sh。mermaid / KaTeX / CSS は
+-- markdown-preview.nvim 同梱のものをコピーして参照するのでオフラインで開ける。
+-- インライン <svg> も素通しする（markdown-it を html=true で動かしている）。
+vim.keymap.set("n", "<leader>ch", function()
+    local file = vim.fn.expand("%:p")
+    if file == "" then
+        vim.notify("ファイルが開かれていません", vim.log.levels.WARN)
+        return
+    end
+
+    -- html / svg はそのままブラウザへ渡す。
+    -- 「生成した HTML をブラウザで見る」用途がこれで同じキーに乗る。
+    local ft = vim.bo.filetype
+    if ft == "html" or ft == "svg" or file:match("%.html?$") or file:match("%.svg$") then
+        vim.system({ "open", file })
+        vim.notify("ブラウザで開きました: " .. file)
+        return
+    end
+
+    if ft ~= "markdown" then
+        vim.notify("markdown / html / svg のいずれかで使ってください（現在: " .. ft .. "）", vim.log.levels.WARN)
+        return
+    end
+
+    local script = vim.fn.expand("~/code/tank/scripts/md_to_html/run.sh")
+    if vim.fn.executable(script) == 0 then
+        vim.notify("スクリプトが見つかりません: " .. script, vim.log.levels.ERROR)
+        return
+    end
+    vim.notify("HTML を生成中…")
+    vim.system({ script, file }, { text = true }, function(res)
+        vim.schedule(function()
+            if res.code == 0 then
+                vim.notify("ブラウザで開きました: " .. vim.trim(res.stdout or ""))
+            else
+                vim.notify("失敗: " .. vim.trim((res.stderr or "") .. (res.stdout or "")), vim.log.levels.ERROR)
+            end
+        end)
+    end)
+end, { desc = "ブラウザで開く（md は HTML 化して / html・svg はそのまま）" })
+
+-- ■ チェックボックス toggle（<CR> / markdown限定）＋ 行内リンクを開く（gx / 全ファイル）
+--
+-- <CR>（Enter）… markdown バッファ限定。カーソル行の [ ]/[?] ⇄ [x] トグル（フラグ立て）
+-- gx          … 全ファイルタイプ（txt / html / markdown …）。カーソル行の最初の http(s)
+--               リンクをブラウザで開く。行にURLが無ければカーソル下の <cfile>
+--               （URL/ファイルパス）を既定アプリで開く＝標準 gx に近い挙動へフォールバック。
+--               ※ render-markdown 等が URL を conceal しても、行テキストから拾うので効く。
+--
+-- leader 版に切り替えたい場合: 各マップ行をコメントアウトし、直下のコメント例を有効化。
+
+-- カーソル行の [x] ⇄ [ ] をトグル（[?] は [x] にする）。checkbox 行以外は無視。
+local function md_toggle_checkbox()
+    local l = vim.api.nvim_get_current_line()
+    if l:match("%[x%]") then
+        l = l:gsub("%[x%]", "[ ]", 1)
+    elseif l:match("%[[ ?]%]") then
+        l = l:gsub("%[[ ?]%]", "[x]", 1)
+    else
+        return
+    end
+    vim.api.nvim_set_current_line(l)
+end
+
+-- カーソル行の最初の http(s) リンクをブラウザで開く。無ければ <cfile> にフォールバック。
+local function open_link_in_line()
+    local l = vim.api.nvim_get_current_line()
+    -- markdown の [text](url) を優先、無ければ行内の生 URL（空白・)・引用符・<>・] で止める）
+    local url = l:match("%]%((https?://[^)%s]+)%)") or l:match("(https?://[^%s)\"'<>%]]+)")
+    if url then
+        vim.ui.open(url)
+        return
+    end
+    -- 行にURLが無ければ、カーソル下の <cfile>（URL/存在するファイル・ディレクトリ）を開く
+    local cfile = vim.fn.expand("<cfile>")
+    if cfile ~= "" and (cfile:match("^%w+://") or cfile:match("^www%.")
+        or vim.fn.filereadable(cfile) == 1 or vim.fn.isdirectory(cfile) == 1) then
+        vim.ui.open(cfile)
+    else
+        vim.notify("この行にリンクがありません", vim.log.levels.WARN)
+    end
+end
+
+-- gx は全ファイルタイプでグローバルに張る（plugin が buffer-local gx を持つバッファでは
+-- そちらが優先されるので邪魔しない）。
+vim.keymap.set("n", "gx", open_link_in_line,
+    { silent = true, desc = "行内リンク or カーソル下をブラウザで開く" })
+-- leader 版にするなら上をコメントアウトして下を有効化:
+-- vim.keymap.set("n", "<leader>mo", open_link_in_line,
+--     { silent = true, desc = "行内リンクをブラウザで開く" })
+
+-- <CR> の checkbox トグルは markdown だけに buffer-local で張る
+local function set_md_maps(buf)
+    vim.keymap.set("n", "<CR>", md_toggle_checkbox,
+        { buffer = buf, silent = true, desc = "チェックボックス toggle [x]" })
+    -- leader 版にするなら上をコメントアウトして下を有効化:
+    -- vim.keymap.set("n", "<leader>mx", md_toggle_checkbox,
+    --     { buffer = buf, silent = true, desc = "チェックボックス toggle [x]" })
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("my_markdown_checkbox", { clear = true }),
+    pattern = { "markdown", "markdown.mdx" },
+    callback = function(ev) set_md_maps(ev.buf) end,
+})
+
+-- 起動時に開いたファイルは FileType が keymaps.lua ロード（VeryLazy）より前に発火して
+-- 取りこぼすため、既に読み込み済みの markdown バッファへ即適用する。
+for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+        set_md_maps(buf)
+    end
+end
