@@ -21,14 +21,18 @@
 - git 
     - .gitconfig
     - .gitignore_global
-- Brewfile
-    - brewのリストdumpしておこうかな
+- パッケージの記録（シンボリックリンクは張らない）
+    - `Brewfile` （tap / formula / cask / VS Code拡張。`brew bundle dump` の生成物）
+        - 復元: `brew bundle install --file=~/dotfiles/Brewfile`
+    - `volta.txt` （nodeランタイムとvolta管理のグローバルパッケージ。`volta list all` の生成物）
+        - voltaは `npm install -g` を横取りするので `brew bundle dump --npm` では拾えず、別ファイルにしている
+    - 手順・注意は [docs/brew/brewfile.md](docs/brew/brewfile.md)
 
 ## TODO
 
 - [ ] VSCode設定の管理を追加する
   - `settings.json` をシンボリックリンクでdotfiles管理にする
-  - `extensions.txt`（`code --list-extensions` の出力）を管理する
+  - [x] ~~`extensions.txt`（`code --list-extensions` の出力）を管理する~~ → `Brewfile` の `vscode "..."` 行で代替済み
   - `keybindings.json` も必要に応じて追加
   - install.shへの組み込み方針を決める
 

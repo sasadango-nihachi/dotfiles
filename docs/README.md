@@ -29,6 +29,7 @@
 | [git/git_config.md](git/git_config.md) | `.gitconfig` / `.gitignore_global` |
 | [jrnl/jrnl_config.md](jrnl/jrnl_config.md) | `.config/jrnl/jrnl.yaml` |
 | [hyper/hyper_config.md](hyper/hyper_config.md) | `.hyper.js`（WezTerm へ移行済み） |
+| [brew/brewfile.md](brew/brewfile.md) | `Brewfile` / `volta.txt`（パッケージのスナップショット） |
 | [windows/windows_env.md](windows/windows_env.md) | Windows 環境の構築手順（`windows_env/`） |
 
 `.zshrc` は鍵・認証情報を含みうるため解説を置かない。

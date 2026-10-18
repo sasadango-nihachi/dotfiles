@@ -13,6 +13,13 @@
 - 管理対象を増やすときはこれらの配列に追記する。
 - `.claude` や `.codex` などは sessions / cache / 認証情報を含むため、ディレクトリ丸ごとはリンクしない。必要な個別ファイルだけを扱う。
 
+## パッケージの記録（Brewfile / volta.txt）
+- `Brewfile` に Homebrew の tap / formula / cask と **VS Code 拡張**を、`volta.txt` に **node ランタイムと volta 管理のグローバルパッケージ**を記録する。
+- **どちらもコマンドの生成物なので手書きしない。** 再生成コマンドは各ファイルの先頭コメントにある。
+- 2枚に分かれているのは、volta が `npm install -g` を横取りするため `brew bundle dump --npm`（`npm ls -g` を見る）が volta のパッケージを取りこぼすから。Brewfile 側は `--no-npm` で npm を外している。
+- シンボリックリンクは張らない（`install.sh` の配列に入れない）。`--file` でリポジトリ内の実体を直接指す。
+- パッケージを増やした・消したら記録を撮り直す。詳細は [docs/brew/brewfile.md](docs/brew/brewfile.md)。
+
 ## docs/ の線引き（tank との分担）
 
 `docs/` には **設定ファイルの実体に紐づく解説だけ**を置く。設定ファイルと 1:1。

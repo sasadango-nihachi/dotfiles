@@ -1,0 +1,25 @@
+# volta が管理する node ランタイムとグローバルパッケージのスナップショット。
+#
+# Brewfile と分けている理由: volta は `npm install -g` を横取りして
+# ~/.volta/tools/image/packages/ に入れるため、`npm ls -g` には出てこない。
+# `brew bundle dump` の npm 行はそこを見るので volta のパッケージを取りこぼす。
+#
+# この形式（volta list all --format plain の生の出力）はそのままでは実行できない。
+# 復元は volta（Brewfile 経由で入る）を入れたあと、下の3行で行う:
+#
+#   volta install $(awk '$1=="runtime"{print $2}' ~/dotfiles/volta.txt)
+#   volta install $(awk '/^runtime/ && /\(default\)/{print $2}' ~/dotfiles/volta.txt)
+#   volta install $(awk '$1=="package"{print $2}' ~/dotfiles/volta.txt)
+#
+#   1行目=全ランタイム / 2行目=default を最後に入れ直して既定に戻す /
+#   3行目=グローバルパッケージ（バージョン込みで固定される）。
+#   ※ 各 package 行の末尾にある「どの node で入れたか」までは再現されない。
+#     復元時は default の node に紐づく。
+#
+# 再生成: 下の1行
+#   { awk '/^#|^$/{print;next}{exit}' ~/dotfiles/volta.txt; volta list all --format plain; } > ~/dotfiles/volta.txt.new && mv ~/dotfiles/volta.txt.new ~/dotfiles/volta.txt
+
+runtime node@20.13.1
+runtime node@22.23.2 (default)
+package @vue/cli@5.0.8 / vue / node@20.13.1 npm@built-in (default)
+package create-react-app@5.0.1 / create-react-app / node@20.13.1 npm@built-in (default)
