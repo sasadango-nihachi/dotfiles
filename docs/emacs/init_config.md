@@ -4,7 +4,7 @@
 
 対象環境: GNU Emacs 30.2 (aarch64-apple-darwin, NS port) / macOS
 
-使い方・キー一覧は tank の `library/emacs/` を参照。こちらは設定ファイルの中身の記録。
+使い方・キー一覧は tank の `library/hub/emacs.md`（hub）から辿る。こちらは設定ファイルの中身の記録。
 
 ---
 
@@ -13,10 +13,10 @@
 使い方（自分で割り当てたキー、treemacs / magit / markdown / doc-view のキー、
 Emacs 標準のキーと用語）は tank リポジトリに移した。
 
-- `~/code/tank/library/emacs/keybindings.md` — 自分の設定のキー一覧
-- `~/code/tank/library/emacs/basics.md` — Emacs 標準のキー・用語
-- `~/code/tank/library/emacs/windows-and-tabs.md` — タブとウィンドウの仕組み
-- `~/code/tank/library/emacs/git-change-badge.md` — 変更ファイル数バッジ
+- `~/code/tank/ideas/memo/202608/20260819_emacs_keybindings.md` — 自分の設定のキー一覧
+- `~/code/tank/ideas/memo/202608/20260819_emacs_basics.md` — Emacs 標準のキー・用語
+- `~/code/tank/ideas/memo/202608/20260819_emacs_windows_and_tabs.md` — タブとウィンドウの仕組み
+- `~/code/tank/ideas/memo/202608/20260819_emacs_git_change_badge.md` — 変更ファイル数バッジ
 
 **この文書は `init.el` そのものの解説**（なぜこう書いたか・どう導入するか）に絞る。
 
@@ -729,7 +729,7 @@ tab-line のタブは「そのウィンドウが表示したバッファの並�
 `my/tile-tabs`（`C-c 3` / `C-c 2`）はタブに並んでいるバッファをウィンドウに割り付ける。
 タブ自体は分割できないので、分割してから各ウィンドウにバッファを入れている。
 
-仕組みとキー一覧は `~/code/tank/library/emacs/windows-and-tabs.md`。
+仕組みとキー一覧は `~/code/tank/ideas/memo/202608/20260819_emacs_windows_and_tabs.md`。
 
 ### 18. git 変更ファイル数バッジ
 
@@ -744,7 +744,7 @@ tab-line のタブは「そのウィンドウが表示したバッファの並�
 Emacs の外でファイルが増減した場合に備えて `after-focus-change-function` でも
 数え直している。
 
-詳細とハマりどころは `~/code/tank/library/emacs/git-change-badge.md`。
+詳細とハマりどころは `~/code/tank/ideas/memo/202608/20260819_emacs_git_change_badge.md`。
 
 ## 変更するときのメモ
 

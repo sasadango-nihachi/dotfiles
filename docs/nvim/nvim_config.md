@@ -235,7 +235,7 @@ gitsigns がグローバルに持つのは `g:gitsigns_head`（ブランチ名�
 表示位置は `lualine_b` の branch の直後（「リポジトリ全体の話」だと分かる並び）。
 
 Emacs 側にも同じバッジを入れてあり、そちらのハマりどころは
-`~/code/tank/library/emacs/git-change-badge.md`。
+`~/code/tank/ideas/memo/202608/20260819_emacs_git_change_badge.md`。
 
 ### 補完の自動ポップアップを止めた（blink.cmp）
 
