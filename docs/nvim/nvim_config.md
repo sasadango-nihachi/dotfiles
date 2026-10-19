@@ -2,7 +2,7 @@
 
 管理対象: `~/dotfiles/.config/nvim` → `~/.config/nvim`（ディレクトリごとシンボリックリンク）
 
-使い方・キー一覧は tank の `~/code/tank/library/neovim/` を参照。ここは設定の中身の記録。
+使い方・キー一覧は tank の `~/code/tank/library/hub/editor_hub.md`（hub）から辿る。ここは設定の中身の記録。
 
 ベースは **LazyVim**。「LazyVim のデフォルトを上書きしたいものだけ書く」方針で、
 素の Neovim 設定を一から積む形にはしていない。
@@ -272,7 +272,7 @@ NVIM_APPNAME=nvim-bare nvim    # alias: nvb
 - LazyVim の Extras を足すときは `config/lazy.lua` の `spec` に `import` を追記
 - LazyVim のデフォルトを**上書き**したい autocmd は `config/autocmds.lua` に書く（`init` では潰される）
 - プラグインのバージョンは `lazy-lock.json` で固定される。`:Lazy update` 後はこれもコミットする
-- 使い方の記録は tank の `library/neovim/` に、設定の意図はこのファイルに
+- 使い方の記録は tank の memo（`library/hub/editor_hub.md` から辿る）に、設定の意図はこのファイルに
 
 ## この設定が外部に依存しているもの
 

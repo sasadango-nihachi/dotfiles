@@ -2,7 +2,7 @@
 
 管理対象: `~/dotfiles/.tmux.conf` → `~/.tmux.conf`（シンボリックリンク）
 
-tmux 自体の使い方は tank の `~/code/tank/library/keyboard-driven-mac/tmux.md`。
+tmux 自体の使い方は tank の `~/code/tank/library/hub/tools_hub.md`（hub）から辿る。
 ここは設定ファイルの中身の記録。
 
 ---

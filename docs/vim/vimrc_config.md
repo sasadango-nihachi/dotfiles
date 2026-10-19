@@ -2,7 +2,7 @@
 
 管理対象: `~/dotfiles/.vimrc` → `~/.vimrc`（シンボリックリンク）
 
-使い方・キー操作は tank の `~/code/tank/library/vim/` を参照。ここは設定ファイルの中身の記録。
+使い方・キー操作は tank の `~/code/tank/library/hub/editor_hub.md`（hub）から辿る。ここは設定ファイルの中身の記録。
 
 ---
 
@@ -124,4 +124,4 @@ command! GS Git | resize 15
 ## 変更するときのメモ
 
 - プラグインを足したら `call plug#begin()` 〜 `plug#end()` の間に `Plug` を追記して `:PlugInstall`
-- 使い方の記録は tank の `library/vim/` に、設定の意図はこのファイルに
+- 使い方の記録は tank の memo（`library/hub/editor_hub.md` から辿る）に、設定の意図はこのファイルに

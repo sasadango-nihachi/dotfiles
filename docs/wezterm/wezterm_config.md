@@ -2,7 +2,7 @@
 
 管理対象: `~/dotfiles/.wezterm.lua` → `~/.wezterm.lua`（シンボリックリンク）
 
-使い方・既定のキーバインドは tank の `~/code/tank/library/wezterm/` を参照。
+使い方・既定のキーバインドは tank の `~/code/tank/library/hub/tools_hub.md`（hub）から辿る。
 ここは設定ファイルの中身の記録。
 
 **設定の中身そのものはコピーしない**（以前この文書に `.wezterm.lua` を丸ごと貼っていたが、
