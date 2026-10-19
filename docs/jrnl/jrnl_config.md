@@ -2,7 +2,7 @@
 
 管理対象: `~/dotfiles/.config/jrnl` → `~/.config/jrnl`（ディレクトリごとシンボリックリンク）
 
-運用の記録は tank の `~/code/tank/library/journal/README.md`。ここは設定の中身。
+運用の記録は tank の `~/code/tank/ideas/memo/202606/20260616_jrnl_運用.md`。ここは設定の中身。
 
 ---
 
