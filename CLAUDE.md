@@ -24,14 +24,14 @@
 
 `docs/` には **設定ファイルの実体に紐づく解説だけ**を置く。設定ファイルと 1:1。
 
-**使い方・キー一覧・チートシートは tank リポジトリ（`~/code/tank/library/<ツール名>/`）**
-に置く。ここには書かない。
+**使い方・キー一覧・チートシートは tank リポジトリの memo（`~/code/tank/ideas/memo/` に日付つきで書き、
+`library/hub/editor_hub.md` `tools_hub.md` `git_hub.md` から束ねる）** に置く。ここには書かない。
 
 判断基準: 「**設定ファイルを消したらこの文書は無意味になるか**」。
 無意味になるなら `docs/`、独立して読めるなら tank。
 
 設定を変えたら、設定の意図は `docs/` に、使い方や調べて分かった仕組みは
-tank の `library/<ツール名>/` に書く。詳細は [docs/README.md](docs/README.md)。
+tank の memo に書き、該当する hub に1行足す。詳細は [docs/README.md](docs/README.md)。
 
 ## 作業上の注意
 - 応答は日本語で行う。

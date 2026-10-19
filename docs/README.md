@@ -2,12 +2,12 @@
 
 **設定ファイルの実体に紐づく解説**を置く。設定ファイルと 1:1 で対応させる。
 
-使い方・キー一覧・チートシートは **tank リポジトリの `library/<ツール名>/`** に置く
-（`~/code/tank/library/`）。ここには置かない。
+使い方・キー一覧・チートシートは **tank リポジトリの memo** に置く（`~/code/tank/ideas/memo/` に日付つきで書き、
+`library/hub/editor_hub.md` `tools_hub.md` `git_hub.md` から束ねる）。ここには置かない。
 
 ## 線引き
 
-| ここ（dotfiles/docs） | tank/library/\<ツール名\>/ |
+| ここ（dotfiles/docs） | tank の memo（hub から辿る） |
 |---|---|
 | この設定ファイルが何をしているか | そのツールの使い方 |
 | なぜそう書いたか（採用理由・トレードオフ） | キー一覧・チートシート |
@@ -37,6 +37,6 @@
 ## 経緯
 
 もともと dotfiles が tank より先にあり、`docs/` に使い方も混在していた（3000行）。
-2026-08-19 に上の線引きで分離し、使い方は tank の `library/` へ移した。
-移動先: `library/emacs/` `library/vim/` `library/git/` `library/wezterm/`
-`library/tmux/` `library/neovim/`。
+2026-08-19 に上の線引きで分離し、使い方は tank の `library/<ツール名>/` へ移した。
+2026-10-19 に tank 側の library 再構成で、それらは日付つきの memo（`ideas/memo/202608/20260819_*` など）になり、
+入口は `library/hub/editor_hub.md`・`tools_hub.md`・`git_hub.md` に変わった。
