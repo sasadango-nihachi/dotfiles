@@ -28,4 +28,4 @@ Electron ベースなので WezTerm（GPU レンダリング、Rust）に比べ�
 乗り換え済みだが、設定自体は消さずに残している。
 
 - WezTerm の設定 — `docs/wezterm/wezterm_config.md`
-- 端末の選定まわり — `~/code/tank/library/keyboard-driven-mac/`
+- 端末の選定まわり — `~/code/tank/library/hub/tools_hub.md`
