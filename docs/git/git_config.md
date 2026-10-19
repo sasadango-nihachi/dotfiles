@@ -5,7 +5,7 @@
 - `~/dotfiles/.gitconfig` → `~/.gitconfig`
 - `~/dotfiles/.gitignore_global` → `~/.gitignore_global`
 
-git / gh コマンドの使い方は tank の `~/code/tank/library/git/` を参照。
+git / gh コマンドの使い方は tank の `~/code/tank/library/hub/git_hub.md`（hub）から辿る。
 ここは設定ファイルの中身の記録。
 
 ---

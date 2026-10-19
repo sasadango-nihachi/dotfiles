@@ -4,7 +4,7 @@
 
 対象環境: GNU Emacs 30.2 (aarch64-apple-darwin, NS port) / macOS
 
-使い方・キー一覧は tank の `library/hub/emacs.md`（hub）から辿る。こちらは設定ファイルの中身の記録。
+使い方・キー一覧は tank の `library/hub/emacs_hub.md`（hub）から辿る。こちらは設定ファイルの中身の記録。
 
 ---
 
