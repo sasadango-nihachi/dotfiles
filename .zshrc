@@ -29,4 +29,7 @@ export SDKMAN_DIR="$HOME/.sdkman"
 # brew rustup shims (added 2026-05-08)
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 
+# ghcup (brew) が入れる ghc / cabal (added 2026-10-25)
+export PATH="$HOME/.ghcup/bin:$PATH"
+
 alias nvb='NVIM_APPNAME=nvim-bare nvim'
