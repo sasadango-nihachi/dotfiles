@@ -14,6 +14,7 @@
 # 詳細は docs/brew/brewfile.md。
 
 tap "adoptopenjdk/openjdk"
+tap "anthropics/tap"
 tap "carlocab/personal"
 tap "homebrew/services"
 tap "ngrok/ngrok"
@@ -22,16 +23,24 @@ tap "oven-sh/bun"
 brew "pycparser"
 # C Foreign Function Interface for Python
 brew "cffi"
+# General-purpose scripting language
+brew "php"
+# Dependency Manager for PHP
+brew "composer"
 # Secure runtime for JavaScript and TypeScript
 brew "deno"
 # Embeddable SQL OLAP Database Management System
 brew "duckdb"
+# Lean Theorem Prover installer and version manager
+brew "elan-init"
 # Simple, fast and user-friendly alternative to find
 brew "fd"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
 # GitHub command-line tool
 brew "gh"
+# Installer for the general purpose language Haskell
+brew "ghcup"
 # Distributed revision control system
 brew "git"
 # Render markdown on the CLI
@@ -40,6 +49,8 @@ brew "glow"
 brew "herdr"
 # Command-line note taker
 brew "jrnl"
+# MIT/GNU Scheme development tools and runtime library
+brew "mit-scheme"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
 # Create, run, and share large language models (LLMs)
@@ -58,6 +69,8 @@ brew "python@3.11"
 brew "rename"
 # Rust toolchain installer
 brew "rustup"
+# Steel Bank Common Lisp system
+brew "sbcl"
 # Tools for market analysis
 brew "ta-lib"
 # Tool to build, change, and version infrastructure
@@ -78,6 +91,8 @@ brew "virtualenv"
 brew "volta"
 # Internet file retriever
 brew "wget"
+# CLI for the Claude Platform
+cask "anthropics/tap/ant", trusted: true
 # Terminal-based AI coding assistant
 cask "claude-code"
 # OpenAI's coding agent that runs in your terminal
@@ -112,6 +127,8 @@ cask "visual-studio-code"
 cask "vlc"
 # GPU-accelerated cross-platform terminal emulator and multiplexer
 cask "wezterm"
+# Video communication and virtual meeting platform
+cask "zoom"
 vscode "anthropic.claude-code"
 vscode "hashicorp.terraform"
 vscode "liviuschera.noctis"
@@ -128,3 +145,4 @@ vscode "ms-toolsai.vscode-jupyter-slideshow"
 vscode "ritwickdey.liveserver"
 vscode "svelte.svelte-vscode"
 vscode "yzane.markdown-pdf"
+uv "harlequin"
